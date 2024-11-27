@@ -1,0 +1,1 @@
+make this is a standalone working directory for ci-cd pipelines that can be made easily when required.
