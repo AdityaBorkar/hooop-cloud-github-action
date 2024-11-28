@@ -31721,8 +31721,7 @@ class CheckRun {
         // this.check_run_id = check.data.id;
     }
     async update(props) {
-        if (!this.check_run_id)
-            throw new Error('check_run_id is required');
+        // if (!this.check_run_id) throw new Error('check_run_id is required')
         const { isSuccess, title, summary, text, actions } = props;
         // return octokit.rest.repos.update({
         // 	...context.repo,
