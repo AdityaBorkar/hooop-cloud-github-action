@@ -55,14 +55,15 @@ export async function CodeValidation() {
 // }
 
 async function CodeFormatting() {
-	const pm = getInput('package-manager')
+	const command = 'bun run format' // TODO - Get from Application Settings
+	const [pm, ...args] = command.split(' ')
 
 	const check = new CheckRun({ name: 'Formatting' })
 	check.create()
 
 	let output = ''
 	let error = ''
-	await exec(`${pm}`, ['run', 'format'], {
+	const exitCode = await exec(pm, args, {
 		listeners: {
 			stdout: (data: Buffer) => {
 				output += data.toString()
@@ -77,10 +78,11 @@ async function CodeFormatting() {
 	let exclusions = 4
 	--exclusions
 
-	core.info(output)
-	core.error(error)
+	core.info(`exitCode = ${exitCode}`) // ? REMOVE
+	core.info(`OUTPUT = ${output}`) // ? REMOVE
+	core.info(`ERROR = ${error}`) // ? REMOVE
 
-	const isSuccess = output.includes('All checks passed') // TODO - IDENTIFY FROM ERROR CODE
+	const isSuccess = exitCode === 0
 	const title =
 		isSuccess ?
 			`Passed with ${exclusions !== 0 ? `${exclusions} exclusions` : ''}`

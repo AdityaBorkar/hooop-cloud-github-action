@@ -31754,7 +31754,6 @@ var exec = __nccwpck_require__(5236);
 
 
 
-
 async function CodeValidation() {
     core.startGroup('Code Validation');
     // const gitGuardian = await GitGuardian();
@@ -31791,12 +31790,13 @@ async function CodeValidation() {
 // 	return { summary, text };
 // }
 async function CodeFormatting() {
-    const pm = (0,core.getInput)('package-manager');
+    const command = 'bun run format'; // TODO - Get from Application Settings
+    const [pm, ...args] = command.split(' ');
     const check = new CheckRun({ name: 'Formatting' });
     check.create();
     let output = '';
     let error = '';
-    await (0,exec.exec)(`${pm}`, ['run', 'format'], {
+    const exitCode = await (0,exec.exec)(pm, args, {
         listeners: {
             stdout: (data) => {
                 output += data.toString();
@@ -31809,9 +31809,10 @@ async function CodeFormatting() {
     // TODO - Detect Exclusions that have been made and list them as warnings
     let exclusions = 4;
     --exclusions;
-    core.info(output);
-    core.error(error);
-    const isSuccess = output.includes('All checks passed'); // TODO - IDENTIFY FROM ERROR CODE
+    core.info(`exitCode = ${exitCode}`); // ? REMOVE
+    core.info(`OUTPUT = ${output}`); // ? REMOVE
+    core.info(`ERROR = ${error}`); // ? REMOVE
+    const isSuccess = exitCode === 0;
     const title = isSuccess ?
         `Passed with ${exclusions !== 0 ? `${exclusions} exclusions` : ''}`
         : '3 errors and 2 warnings'; // TODO
