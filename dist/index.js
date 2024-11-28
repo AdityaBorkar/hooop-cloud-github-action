@@ -31661,35 +31661,6 @@ module.exports = parseParams
 /******/ }
 /******/ 
 /************************************************************************/
-/******/ /* webpack/runtime/compat get default export */
-/******/ (() => {
-/******/ 	// getDefaultExport function for compatibility with non-harmony modules
-/******/ 	__nccwpck_require__.n = (module) => {
-/******/ 		var getter = module && module.__esModule ?
-/******/ 			() => (module['default']) :
-/******/ 			() => (module);
-/******/ 		__nccwpck_require__.d(getter, { a: getter });
-/******/ 		return getter;
-/******/ 	};
-/******/ })();
-/******/ 
-/******/ /* webpack/runtime/define property getters */
-/******/ (() => {
-/******/ 	// define getter functions for harmony exports
-/******/ 	__nccwpck_require__.d = (exports, definition) => {
-/******/ 		for(var key in definition) {
-/******/ 			if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
-/******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 			}
-/******/ 		}
-/******/ 	};
-/******/ })();
-/******/ 
-/******/ /* webpack/runtime/hasOwnProperty shorthand */
-/******/ (() => {
-/******/ 	__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ })();
-/******/ 
 /******/ /* webpack/runtime/compat */
 /******/ 
 /******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
@@ -31699,14 +31670,40 @@ var __webpack_exports__ = {};
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(7484);
-var core_default = /*#__PURE__*/__nccwpck_require__.n(core);
+;// CONCATENATED MODULE: ./src/functions/CodePerformance.ts
+
+async function CodePerformance() {
+    core.startGroup('Code Performance');
+    core.endGroup();
+    return { summary: '', text: '' };
+}
+
+;// CONCATENATED MODULE: ./src/functions/CodeTesting.ts
+
+async function CodeTesting() {
+    core.startGroup('Code Testing');
+    // const testing = await CodeTesting();
+    core.endGroup();
+    return { summary: '', text: '' };
+}
+// async function CodeTesting() {
+// 	const pm = getInput('package-manager');
+// 	const check = new CheckRun({ name: 'Formatting' });
+// 	check.create();
+// 	const output = await exec(`${pm} run format`);
+// 	const isSuccess = output.includes('All checks passed');
+// 	// TODO - Produce an error
+// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
+// 	const text = `\`\`\` ${output} \`\`\``;
+// 	check.update({ summary, text });
+// 	return { summary, text };
+// }
+
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(3228);
 ;// CONCATENATED MODULE: ./src/utils/createCheckRun.ts
 
-
-const GithubToken = (0,core.getState)('GithubToken');
-const octokit = (0,github.getOctokit)(GithubToken);
+const octokit = (0,github.getOctokit)(process.env.GITHUB_TOKEN || '');
 class CheckRun {
     name;
     check_run_id;
@@ -31718,41 +31715,28 @@ class CheckRun {
             ...github.context.repo,
             head_sha: github.context.sha,
             name: this.name,
-            status: 'in_progress',
-            details_url: 'https://hooop.cloud',
-            output: { title: 'All checks passed', summary: '' },
+            status: 'in_progress', // TODO
+            details_url: 'https://hooop.cloud', // TODO
         });
         this.check_run_id = check.data.id;
     }
     async update(props) {
         if (!this.check_run_id)
             throw new Error('check_run_id is required');
+        const { title, summary, text, actions } = props;
         return octokit.rest.checks.update({
             ...github.context.repo,
-            check_run_id: this.check_run_id,
-            head_sha: github.context.sha,
-            name: this.name,
             status: 'completed',
-            details_url: 'https://hooop.cloud',
-            output: {
-                title: 'All checks passed', // IS SHOWN IN THE PR PAGE
-                summary: props.summary,
-                text: props.text,
-                // output.annotations[].path,
-                // output.annotations[].start_line,
-                // output.annotations[].end_line,
-                // output.annotations[].annotation_level,
-                // output.annotations[].message,
-                // output.images[].alt,
-                // output.images[].image_url,
-            },
-            // actions: [
-            // 	{
-            // 		label: 'View on GitGuardian',
-            // 		description: 'View on GitGuardian',
-            // 		identifier: 'gitguardian-view',
-            // 	},
-            // ],
+            check_run_id: this.check_run_id,
+            output: { title, summary, text },
+            actions,
+            // output.annotations[].path,
+            // output.annotations[].start_line,
+            // output.annotations[].end_line,
+            // output.annotations[].annotation_level,
+            // output.annotations[].message,
+            // output.images[].alt,
+            // output.images[].image_url,
         });
     }
 }
@@ -31764,6 +31748,7 @@ var exec = __nccwpck_require__(5236);
 
 
 
+// ! TODO - UAT
 async function CodeValidation() {
     core.startGroup('Code Validation');
     // const gitGuardian = await GitGuardian();
@@ -31771,10 +31756,11 @@ async function CodeValidation() {
     const formatting = await CodeFormatting();
     // const linting = await CodeLinting();
     core.endGroup();
-    return { summary: '' };
+    return { summary: formatting.summary, text: formatting.text };
 }
 // async function GitGuardian() {
-// 	const pm = getInput('packageManager');
+// 	const pm = getInput('package-manager');
+// https://octokit.github.io/rest.js/v21/#secret-scanning-get-alert
 // 	const check = new CheckRun({ name: 'GitGuardian' });
 // 	check.create();
 // 	const output = await exec(`${pm} run format`);
@@ -31786,7 +31772,8 @@ async function CodeValidation() {
 // 	return { summary, text };
 // }
 // async function CodeQL() {
-// 	const pm = getInput('packageManager');
+// 	const pm = getInput('package-manager');
+// https://octokit.github.io/rest.js/v21/#code-scanning
 // 	const check = new CheckRun({ name: 'Formatting' });
 // 	check.create();
 // 	const output = await exec(`${pm} run format`);
@@ -31798,7 +31785,7 @@ async function CodeValidation() {
 // 	return { summary, text };
 // }
 async function CodeFormatting() {
-    const pm = (0,core.getInput)('packageManager');
+    const pm = (0,core.getInput)('package-manager');
     const check = new CheckRun({ name: 'Formatting' });
     check.create();
     let output = '';
@@ -31814,18 +31801,28 @@ async function CodeFormatting() {
         },
     });
     // TODO - Detect Exclusions that have been made and list them as warnings
-    // TODO - Produce an error
-    // TODO - Button: Auto Format
+    let exclusions = 4;
+    --exclusions;
     core.info(output);
     core.error(error);
-    const isSuccess = output.includes('All checks passed');
-    const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
+    const isSuccess = output.includes('All checks passed'); // TODO - IDENTIFY FROM ERROR CODE
+    const title = isSuccess ?
+        `Passed with ${exclusions !== 0 ? `${exclusions} exclusions` : ''}`
+        : '3 errors and 2 warnings'; // TODO
+    const summary = `Status: ${isSuccess ? '✅ Success' : '❌ Failure'}\n <sub>Script executed = \`${pm} run format\`</sub>`;
     const text = `\`\`\` ${output} \`\`\``;
-    check.update({ summary, text });
+    const actions = [
+        {
+            label: 'Auto Format',
+            description: 'Auto Format',
+            identifier: 'auto-format',
+        },
+    ];
+    check.update({ title, summary, text, actions });
     return { summary, text };
 }
 // async function CodeLinting() {
-// 	const pm = getInput('packageManager');
+// 	const pm = getInput('package-manager');
 // 	const check = new CheckRun({ name: 'Formatting' });
 // 	check.create();
 // 	const code = await exec(`${pm} run lint:code`);
@@ -31840,35 +31837,6 @@ async function CodeFormatting() {
 // 		knip.includes('All checks passed') &&
 // 		code.includes('All checks passed') &&
 // 		md.includes('All checks passed');
-// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
-// 	const text = `\`\`\` ${output} \`\`\``;
-// 	check.update({ summary, text });
-// 	return { summary, text };
-// }
-
-;// CONCATENATED MODULE: ./src/functions/CodePerformance.ts
-
-async function CodePerformance() {
-    core.startGroup('Code Performance');
-    core.endGroup();
-    return { summary: '', text: '' };
-}
-
-;// CONCATENATED MODULE: ./src/functions/CodeCoverage.ts
-
-async function CodeCoverage() {
-    core.startGroup('Code Coverage');
-    // const testing = await CodeTesting();
-    core.endGroup();
-    return { summary: '', text: '' };
-}
-// async function CodeTesting() {
-// 	const pm = getInput('packageManager');
-// 	const check = new CheckRun({ name: 'Formatting' });
-// 	check.create();
-// 	const output = await exec(`${pm} run format`);
-// 	const isSuccess = output.includes('All checks passed');
-// 	// TODO - Produce an error
 // 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
 // 	const text = `\`\`\` ${output} \`\`\``;
 // 	check.update({ summary, text });
@@ -31905,7 +31873,7 @@ async function Preview() {
     return { summary: '', text: '' };
 }
 // async function CodeBuilding() {
-// 	const pm = getInput('packageManager');
+// 	const pm = getInput('package-manager');
 // 	const check = new CheckRun({ name: 'Formatting' });
 // 	check.create();
 // 	const output = await exec(`${pm} run build:packages --output-style=stream`);
@@ -31926,47 +31894,46 @@ async function Preview() {
 async function run() {
     try {
         // * Parameters
-        const pm = (0,core.getInput)('packageManager', { required: true });
+        const pm = (0,core.getInput)('package-manager', { required: true });
         if (!['bun', 'pnpm', 'npm'].includes(pm))
             throw new Error('We support only bun, pnpm, npm as package managers');
-        const GithubToken = (0,core.getInput)('GithubToken', { required: true });
+        const GithubToken = process.env.GITHUB_TOKEN;
         if (!GithubToken)
             throw new Error('Github token is required');
         // * Run Functions
         const codeValidation = await CodeValidation();
-        const codeCoverage = await CodeCoverage();
+        const codeTesting = await CodeTesting();
         const codePerformance = await CodePerformance();
         const preview = await Preview();
-        // const prValidation = await PrValidation();
         // * Job Summary:
         core.summary.addHeading('Job Summary', '2');
         core.summary.addSeparator();
         core.summary.addList([
             '[Code Validation](##CodeValidation)',
-            '[Code Coverage](##CodeCoverage)',
+            '[Code Testing](##CodeTesting)',
             '[Code Performance](##CodePerformance)',
             '[Preview](##Preview)',
-            // '[PR Validation](##PrValidation)',
         ], true);
         core.summary.addBreak();
         core.summary.addHeading('Code Validation', '2');
         core.summary.addSeparator();
-        core.summary.addCodeBlock('', 'bash');
-        core.summary.addHeading('Code Coverage', '2');
+        core.summary.addRaw(codeValidation.summary, true);
+        core.summary.addCodeBlock(codeValidation.text, 'bash');
+        core.summary.addHeading('Code Testing', '2');
         core.summary.addSeparator();
-        core.summary.addCodeBlock('', 'bash');
+        core.summary.addRaw(codeTesting.summary, true);
+        core.summary.addCodeBlock(codeTesting.text, 'bash');
         core.summary.addHeading('Code Performance', '2');
         core.summary.addSeparator();
-        core.summary.addCodeBlock('', 'bash');
+        core.summary.addRaw(codePerformance.summary, true);
+        core.summary.addCodeBlock(codePerformance.text, 'bash');
         core.summary.addHeading('Preview', '2');
         core.summary.addSeparator();
-        core.summary.addCodeBlock('', 'bash');
-        // summary.addHeading('PR Validation', '2');
-        // summary.addSeparator();
-        // summary.addCodeBlock('', 'bash');
+        core.summary.addRaw(preview.summary, true);
+        core.summary.addCodeBlock(preview.text, 'bash');
     }
     catch (error) {
-        core_default().setFailed(error instanceof Error ? error.message : String(error));
+        (0,core.setFailed)(error instanceof Error ? error.message : String(error));
     }
 }
 

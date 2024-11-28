@@ -1,7 +1,10 @@
 {
 	"name": "hooop-cloud-github-action",
 	"description": "GitHub Actions for CI/CD pipelines",
-	"keywords": ["GitHub", "Actions"],
+	"keywords": [
+		"GitHub",
+		"Actions"
+	],
 	"version": "0.0.1",
 	"author": "Aditya Borkar",
 	"license": "MIT",

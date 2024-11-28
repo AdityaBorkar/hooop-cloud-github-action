@@ -1,7 +1,7 @@
-import * as core from '@actions/core';
+import * as core from '@actions/core'
 
 export async function Preview() {
-	core.startGroup('Preview');
+	core.startGroup('Preview')
 
 	// # - uses: marocchino/sticky-pull-request-comment@v2
 	// #   if: ${{ github.event_name == 'pull_request' }}
@@ -35,8 +35,8 @@ export async function Preview() {
 
 	// #       Can documentation changes be applied without version release?
 
-	core.endGroup();
-	return { summary: '', text: '' };
+	core.endGroup()
+	return { summary: '', text: '' }
 }
 
 // async function CodeBuilding() {

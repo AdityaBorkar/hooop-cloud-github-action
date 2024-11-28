@@ -1,20 +1,21 @@
-import { CheckRun } from 'src/utils/createCheckRun.js';
-import * as core from '@actions/core';
-import { exec } from '@actions/exec';
-import { getInput } from '@actions/core';
+import { CheckRun } from 'src/utils/createCheckRun.js'
+
+import * as core from '@actions/core'
+import { getInput } from '@actions/core'
+import { exec } from '@actions/exec'
 
 // ! TODO - UAT
 
 export async function CodeValidation() {
-	core.startGroup('Code Validation');
+	core.startGroup('Code Validation')
 
 	// const gitGuardian = await GitGuardian();
 	// const codeQL = await CodeQL();
-	const formatting = await CodeFormatting();
+	const formatting = await CodeFormatting()
 	// const linting = await CodeLinting();
 
-	core.endGroup();
-	return { summary: formatting.summary, text: formatting.text };
+	core.endGroup()
+	return { summary: formatting.summary, text: formatting.text }
 }
 
 // async function GitGuardian() {
@@ -56,47 +57,48 @@ export async function CodeValidation() {
 // }
 
 async function CodeFormatting() {
-	const pm = getInput('package-manager');
+	const pm = getInput('package-manager')
 
-	const check = new CheckRun({ name: 'Formatting' });
-	check.create();
+	const check = new CheckRun({ name: 'Formatting' })
+	check.create()
 
-	let output = '';
-	let error = '';
+	let output = ''
+	let error = ''
 	await exec(`${pm}`, ['run', 'format'], {
 		listeners: {
 			stdout: (data: Buffer) => {
-				output += data.toString();
+				output += data.toString()
 			},
 			stderr: (data: Buffer) => {
-				error += data.toString();
+				error += data.toString()
 			},
 		},
-	});
+	})
 
 	// TODO - Detect Exclusions that have been made and list them as warnings
-	let exclusions = 4;
-	--exclusions;
+	let exclusions = 4
+	--exclusions
 
-	core.info(output);
-	core.error(error);
+	core.info(output)
+	core.error(error)
 
-	const isSuccess = output.includes('All checks passed'); // TODO - IDENTIFY FROM ERROR CODE
-	const title = isSuccess
-		? `Passed with ${exclusions !== 0 ? `${exclusions} exclusions` : ''}`
-		: '3 errors and 2 warnings'; // TODO
-	const summary = `Status: ${isSuccess ? '✅ Success' : '❌ Failure'}\n <sub>Script executed = \`${pm} run format\`</sub>`;
-	const text = `\`\`\` ${output} \`\`\``;
+	const isSuccess = output.includes('All checks passed') // TODO - IDENTIFY FROM ERROR CODE
+	const title =
+		isSuccess ?
+			`Passed with ${exclusions !== 0 ? `${exclusions} exclusions` : ''}`
+		:	'3 errors and 2 warnings' // TODO
+	const summary = `Status: ${isSuccess ? '✅ Success' : '❌ Failure'}\n <sub>Script executed = \`${pm} run format\`</sub>`
+	const text = `\`\`\` ${output} \`\`\``
 	const actions = [
 		{
 			label: 'Auto Format',
 			description: 'Auto Format',
 			identifier: 'auto-format',
 		},
-	];
+	]
 
-	check.update({ title, summary, text, actions });
-	return { summary, text };
+	check.update({ title, summary, text, actions })
+	return { summary, text }
 }
 
 // async function CodeLinting() {

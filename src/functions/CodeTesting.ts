@@ -1,12 +1,12 @@
-import * as core from '@actions/core';
+import * as core from '@actions/core'
 
 export async function CodeTesting() {
-	core.startGroup('Code Testing');
+	core.startGroup('Code Testing')
 
 	// const testing = await CodeTesting();
 
-	core.endGroup();
-	return { summary: '', text: '' };
+	core.endGroup()
+	return { summary: '', text: '' }
 }
 
 // async function CodeTesting() {
