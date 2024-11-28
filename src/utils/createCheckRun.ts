@@ -1,13 +1,13 @@
-import { context, getOctokit } from '@actions/github'
+import { context, getOctokit } from '@actions/github';
 
-const octokit = getOctokit(process.env.GITHUB_TOKEN || '')
+const octokit = getOctokit(process.env.GITHUB_TOKEN || '');
 
 export class CheckRun {
-	name: string
-	check_run_id?: number
+	name: string;
+	check_run_id?: number;
 
 	constructor(props: { name: string }) {
-		this.name = props.name
+		this.name = props.name;
 	}
 
 	async create() {
@@ -22,19 +22,19 @@ export class CheckRun {
 	}
 
 	async update(props: {
-		isSuccess: boolean
-		title: string
-		summary: string
-		text?: string
+		isSuccess: boolean;
+		title: string;
+		summary: string;
+		text?: string;
 		actions?: {
-			label: string
-			description: string
-			identifier: string
-		}[]
+			label: string;
+			description: string;
+			identifier: string;
+		}[];
 	}) {
-		if (!this.check_run_id) throw new Error('check_run_id is required')
+		// if (!this.check_run_id) throw new Error('check_run_id is required')
 
-		const { isSuccess, title, summary, text, actions } = props
+		const { isSuccess, title, summary, text, actions } = props;
 
 		// return octokit.rest.repos.update({
 		// 	...context.repo,
@@ -59,6 +59,6 @@ export class CheckRun {
 			name: this.name,
 			state: isSuccess ? 'success' : 'failure',
 			description: title,
-		})
+		});
 	}
 }
