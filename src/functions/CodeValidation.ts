@@ -3,6 +3,8 @@ import * as core from '@actions/core';
 import { exec } from '@actions/exec';
 import { getInput } from '@actions/core';
 
+// ! TODO - UAT
+
 export async function CodeValidation() {
 	core.startGroup('Code Validation');
 
@@ -12,11 +14,11 @@ export async function CodeValidation() {
 	// const linting = await CodeLinting();
 
 	core.endGroup();
-	return { summary: '' };
+	return { summary: formatting.summary, text: formatting.text };
 }
 
 // async function GitGuardian() {
-// 	const pm = getInput('packageManager');
+// 	const pm = getInput('package-manager');
 
 // https://octokit.github.io/rest.js/v21/#secret-scanning-get-alert
 // 	const check = new CheckRun({ name: 'GitGuardian' });
@@ -35,7 +37,7 @@ export async function CodeValidation() {
 // }
 
 // async function CodeQL() {
-// 	const pm = getInput('packageManager');
+// 	const pm = getInput('package-manager');
 
 // https://octokit.github.io/rest.js/v21/#code-scanning
 // 	const check = new CheckRun({ name: 'Formatting' });
@@ -54,7 +56,7 @@ export async function CodeValidation() {
 // }
 
 async function CodeFormatting() {
-	const pm = getInput('packageManager');
+	const pm = getInput('package-manager');
 
 	const check = new CheckRun({ name: 'Formatting' });
 	check.create();
@@ -73,22 +75,32 @@ async function CodeFormatting() {
 	});
 
 	// TODO - Detect Exclusions that have been made and list them as warnings
+	let exclusions = 4;
+	--exclusions;
 
-	// TODO - Produce an error
-	// TODO - Button: Auto Format
 	core.info(output);
 	core.error(error);
 
-	const isSuccess = output.includes('All checks passed');
-	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
+	const isSuccess = output.includes('All checks passed'); // TODO - IDENTIFY FROM ERROR CODE
+	const title = isSuccess
+		? `Passed with ${exclusions !== 0 ? `${exclusions} exclusions` : ''}`
+		: '3 errors and 2 warnings'; // TODO
+	const summary = `Status: ${isSuccess ? '✅ Success' : '❌ Failure'}\n <sub>Script executed = \`${pm} run format\`</sub>`;
 	const text = `\`\`\` ${output} \`\`\``;
+	const actions = [
+		{
+			label: 'Auto Format',
+			description: 'Auto Format',
+			identifier: 'auto-format',
+		},
+	];
 
-	check.update({ summary, text });
+	check.update({ title, summary, text, actions });
 	return { summary, text };
 }
 
 // async function CodeLinting() {
-// 	const pm = getInput('packageManager');
+// 	const pm = getInput('package-manager');
 
 // 	const check = new CheckRun({ name: 'Formatting' });
 // 	check.create();

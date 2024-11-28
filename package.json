@@ -1,11 +1,8 @@
 {
 	"name": "hooop-cloud-github-action",
 	"description": "GitHub Actions for CI/CD pipelines",
-	"keywords": [
-		"GitHub",
-		"Actions"
-	],
-	"version": "0.0.0",
+	"keywords": ["GitHub", "Actions"],
+	"version": "0.0.1",
 	"author": "Aditya Borkar",
 	"license": "MIT",
 	"private": true,
@@ -25,7 +22,7 @@
 		"node": ">=20"
 	},
 	"scripts": {
-		"local-action": "npx local-action . src/main.ts .env",
+		"local-action": "bunx local-action . src/index.ts .env.local",
 		"format:check": "bun prettier --check .",
 		"format:write": "bun prettier --write .",
 		"package": "bun ncc build src/index.ts -o dist --source-map --license licenses.txt",

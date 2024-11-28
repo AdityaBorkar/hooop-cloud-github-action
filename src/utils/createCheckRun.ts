@@ -1,8 +1,6 @@
-import { getState } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 
-const GithubToken = getState('GithubToken');
-const octokit = getOctokit(GithubToken);
+const octokit = getOctokit(process.env.GITHUB_TOKEN || '');
 
 export class CheckRun {
 	name: string;
@@ -19,44 +17,39 @@ export class CheckRun {
 			...context.repo,
 			head_sha: context.sha,
 			name: this.name,
-			status: 'in_progress',
-			details_url: 'https://hooop.cloud',
-			output: { title: 'All checks passed', summary: '' },
+			status: 'in_progress', // TODO
+			details_url: 'https://hooop.cloud', // TODO
 		});
 		this.check_run_id = check.data.id;
 	}
 
 	async update(props: {
+		title: string;
 		summary: string;
 		text?: string;
+		actions?: {
+			label: string;
+			description: string;
+			identifier: string;
+		}[];
 	}) {
 		if (!this.check_run_id) throw new Error('check_run_id is required');
+
+		const { title, summary, text, actions } = props;
+
 		return octokit.rest.checks.update({
 			...context.repo,
-			check_run_id: this.check_run_id,
-			head_sha: context.sha,
-			name: this.name,
 			status: 'completed',
-			details_url: 'https://hooop.cloud',
-			output: {
-				title: 'All checks passed', // IS SHOWN IN THE PR PAGE
-				summary: props.summary,
-				text: props.text,
-				// output.annotations[].path,
-				// output.annotations[].start_line,
-				// output.annotations[].end_line,
-				// output.annotations[].annotation_level,
-				// output.annotations[].message,
-				// output.images[].alt,
-				// output.images[].image_url,
-			},
-			// actions: [
-			// 	{
-			// 		label: 'View on GitGuardian',
-			// 		description: 'View on GitGuardian',
-			// 		identifier: 'gitguardian-view',
-			// 	},
-			// ],
+			check_run_id: this.check_run_id,
+			output: { title, summary, text },
+			actions,
+			// output.annotations[].path,
+			// output.annotations[].start_line,
+			// output.annotations[].end_line,
+			// output.annotations[].annotation_level,
+			// output.annotations[].message,
+			// output.images[].alt,
+			// output.images[].image_url,
 		});
 	}
 }

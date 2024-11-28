@@ -40,7 +40,7 @@ export async function Preview() {
 }
 
 // async function CodeBuilding() {
-// 	const pm = getInput('packageManager');
+// 	const pm = getInput('package-manager');
 
 // 	const check = new CheckRun({ name: 'Formatting' });
 // 	check.create();

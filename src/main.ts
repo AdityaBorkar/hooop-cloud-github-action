@@ -1,19 +1,18 @@
-import core, { getInput, summary } from '@actions/core';
+import { getInput, setFailed, summary } from '@actions/core';
 import { CodeValidation } from './functions/CodeValidation.js';
 import { CodePerformance } from './functions/CodePerformance.js';
 import { CodeTesting } from './functions/CodeTesting.js';
 import { Preview } from './functions/Preview.js';
-// import { PrValidation } from './functions/PrValidation.js';
 
 export async function run() {
 	try {
 		// * Parameters
 
-		const pm = getInput('packageManager', { required: true });
+		const pm = getInput('package-manager', { required: true });
 		if (!['bun', 'pnpm', 'npm'].includes(pm))
 			throw new Error('We support only bun, pnpm, npm as package managers');
 
-		const GithubToken = getInput('GithubToken', { required: true });
+		const GithubToken = process.env.GITHUB_TOKEN;
 		if (!GithubToken) throw new Error('Github token is required');
 
 		// * Run Functions
@@ -22,7 +21,6 @@ export async function run() {
 		const codeTesting = await CodeTesting();
 		const codePerformance = await CodePerformance();
 		const preview = await Preview();
-		// const prValidation = await PrValidation();
 
 		// * Job Summary:
 
@@ -34,7 +32,6 @@ export async function run() {
 				'[Code Testing](##CodeTesting)',
 				'[Code Performance](##CodePerformance)',
 				'[Preview](##Preview)',
-				// '[PR Validation](##PrValidation)',
 			],
 			true,
 		);
@@ -42,24 +39,24 @@ export async function run() {
 
 		summary.addHeading('Code Validation', '2');
 		summary.addSeparator();
-		summary.addCodeBlock('', 'bash');
+		summary.addRaw(codeValidation.summary, true);
+		summary.addCodeBlock(codeValidation.text, 'bash');
 
 		summary.addHeading('Code Testing', '2');
 		summary.addSeparator();
-		summary.addCodeBlock('', 'bash');
+		summary.addRaw(codeTesting.summary, true);
+		summary.addCodeBlock(codeTesting.text, 'bash');
 
 		summary.addHeading('Code Performance', '2');
 		summary.addSeparator();
-		summary.addCodeBlock('', 'bash');
+		summary.addRaw(codePerformance.summary, true);
+		summary.addCodeBlock(codePerformance.text, 'bash');
 
 		summary.addHeading('Preview', '2');
 		summary.addSeparator();
-		summary.addCodeBlock('', 'bash');
-
-		// summary.addHeading('PR Validation', '2');
-		// summary.addSeparator();
-		// summary.addCodeBlock('', 'bash');
+		summary.addRaw(preview.summary, true);
+		summary.addCodeBlock(preview.text, 'bash');
 	} catch (error: unknown) {
-		core.setFailed(error instanceof Error ? error.message : String(error));
+		setFailed(error instanceof Error ? error.message : String(error));
 	}
 }
