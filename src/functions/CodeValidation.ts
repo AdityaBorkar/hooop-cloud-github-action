@@ -4,8 +4,6 @@ import * as core from '@actions/core'
 import { getInput } from '@actions/core'
 import { exec } from '@actions/exec'
 
-// ! TODO - UAT
-
 export async function CodeValidation() {
 	core.startGroup('Code Validation')
 
@@ -97,7 +95,7 @@ async function CodeFormatting() {
 		},
 	]
 
-	check.update({ title, summary, text, actions })
+	check.update({ isSuccess, title, summary, text, actions })
 	return { summary, text }
 }
 

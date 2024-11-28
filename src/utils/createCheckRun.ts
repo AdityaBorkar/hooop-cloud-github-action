@@ -11,17 +11,18 @@ export class CheckRun {
 	}
 
 	async create() {
-		const check = await octokit.rest.checks.create({
-			...context.repo,
-			head_sha: context.sha,
-			name: this.name,
-			status: 'in_progress', // TODO
-			details_url: 'https://hooop.cloud', // TODO
-		})
-		this.check_run_id = check.data.id
+		// await octokit.rest.checks.create({
+		// 	...context.repo,
+		// 	head_sha: context.sha,
+		// 	name: this.name,
+		// 	status: 'in_progress', // TODO
+		// 	details_url: 'https://hooop.cloud', // TODO
+		// });
+		// this.check_run_id = check.data.id;
 	}
 
 	async update(props: {
+		isSuccess: boolean
 		title: string
 		summary: string
 		text?: string
@@ -33,21 +34,31 @@ export class CheckRun {
 	}) {
 		if (!this.check_run_id) throw new Error('check_run_id is required')
 
-		const { title, summary, text, actions } = props
+		const { isSuccess, title, summary, text, actions } = props
 
-		return octokit.rest.checks.update({
+		// return octokit.rest.repos.update({
+		// 	...context.repo,
+		// 	status: 'completed',
+		// 	check_run_id: this.check_run_id,
+		// 	output: { title, summary, text },
+		// 	actions,
+		// 	// output.annotations[].path,
+		// 	// output.annotations[].start_line,
+		// 	// output.annotations[].end_line,
+		// 	// output.annotations[].annotation_level,
+		// 	// output.annotations[].message,
+		// 	// output.images[].alt,
+		// 	// output.images[].image_url,
+		// });
+
+		// ? WORKAROUND - WE ARE USING COMMIT STATUSES INSTEAD OF CHECK RUNS UNTIL THE APP IS PUBLISHED
+
+		await octokit.rest.repos.createCommitStatus({
 			...context.repo,
-			status: 'completed',
-			check_run_id: this.check_run_id,
-			output: { title, summary, text },
-			actions,
-			// output.annotations[].path,
-			// output.annotations[].start_line,
-			// output.annotations[].end_line,
-			// output.annotations[].annotation_level,
-			// output.annotations[].message,
-			// output.images[].alt,
-			// output.images[].image_url,
+			sha: context.sha,
+			name: this.name,
+			state: isSuccess ? 'success' : 'failure',
+			description: title,
 		})
 	}
 }
