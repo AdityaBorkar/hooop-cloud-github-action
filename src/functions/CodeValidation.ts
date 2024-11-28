@@ -64,6 +64,7 @@ async function CodeFormatting() {
 	let output = ''
 	let error = ''
 	const exitCode = await exec(pm, args, {
+		ignoreReturnCode: true,
 		listeners: {
 			stdout: (data: Buffer) => {
 				output += data.toString()

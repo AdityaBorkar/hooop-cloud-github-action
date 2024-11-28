@@ -31797,6 +31797,7 @@ async function CodeFormatting() {
     let output = '';
     let error = '';
     const exitCode = await (0,exec.exec)(pm, args, {
+        ignoreReturnCode: true,
         listeners: {
             stdout: (data) => {
                 output += data.toString();
