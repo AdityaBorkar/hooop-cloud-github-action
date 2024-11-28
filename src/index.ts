@@ -1,10 +1,3 @@
-const core = require('@actions/core');
-//...
+import { run } from './main.js';
 
-async function run() {
-	try {
-		//...
-	} catch (error) {
-		core.setFailed(error.message);
-	}
-}
+run();
