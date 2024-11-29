@@ -1,6 +1,6 @@
 {
 	"eslintConfig": {
-		"extends": "./.github/linters/.eslintrc.yml",
+		"extends": "./.github/linters/.eslintrc.yml"
 	},
 	"jest": {
 		"verbose": true,
@@ -11,11 +11,11 @@
 		"testPathIgnorePatterns": ["/node_modules/", "/dist/"],
 		"coverageReporters": ["json-summary", "text", "lcov"],
 		"collectCoverage": true,
-		"collectCoverageFrom": ["./src/**"],
+		"collectCoverageFrom": ["./src/**"]
 	},
 	"scripts": {
 		"coverage": "bun make-coverage-badge --output-path ./badges/coverage.svg",
 		"lint": "bun eslint . -c ./.github/linters/.eslintrc.yml",
-		"all": "bun format:write && bun lint && bun build",
-	},
+		"all": "bun format:write && bun lint && bun build"
+	}
 }

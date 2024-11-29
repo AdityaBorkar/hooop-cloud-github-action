@@ -1,7 +1,11 @@
-import * as core from '@actions/core'
+import { summary, startGroup, endGroup } from '@actions/core';
 
 export async function Preview() {
-	core.startGroup('Preview')
+	startGroup('Preview');
+
+	summary.addHeading('Preview', '2');
+	summary.addRaw('TBD', true);
+	summary.addCodeBlock('TBD', 'bash');
 
 	// # - uses: marocchino/sticky-pull-request-comment@v2
 	// #   if: ${{ github.event_name == 'pull_request' }}
@@ -35,24 +39,5 @@ export async function Preview() {
 
 	// #       Can documentation changes be applied without version release?
 
-	core.endGroup()
-	return { summary: '', text: '' }
+	endGroup();
 }
-
-// async function CodeBuilding() {
-// 	const pm = getInput('package-manager');
-
-// 	const check = new CheckRun({ name: 'Formatting' });
-// 	check.create();
-
-// 	const output = await exec(`${pm} run build:packages --output-style=stream`);
-
-// 	// TODO - Produce an error
-
-// 	const isSuccess = output.includes('All checks passed');
-// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
-// 	const text = `\`\`\` ${output} \`\`\``;
-
-// 	check.update({ summary, text });
-// 	return { summary, text };
-// }

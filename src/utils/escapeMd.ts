@@ -1,3 +1,3 @@
 export function escapeMd(text: string) {
-	return text.replace(/([\\`*_{}[\]()#+\-.!])/g, '\\$1')
+	return text.replace(/([\\`*_{}[\]()#+\-.!])/g, '\\$1');
 }

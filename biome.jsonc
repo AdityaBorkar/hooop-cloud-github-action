@@ -12,20 +12,20 @@
 			".husky/",
 			".nx/cache/",
 			".nx/workspace-data/",
-			".all-contributorsrc",
-		],
+			".all-contributorsrc"
+		]
 	},
 	"formatter": {
 		"enabled": true,
 		"indentWidth": 2,
-		"indentStyle": "tab",
+		"indentStyle": "tab"
 		// https://github.com/un-ts/prettier/tree/master/packages/sh
 		// https://github.com/matzkoh/prettier-plugin-packagejson
 		// https://github.com/JoshuaKGoldberg/prettier-plugin-curly
 	},
 	"organizeImports": { "enabled": true },
 	"linter": {
-		"enabled": true,
+		"enabled": true
 		// "rules": { "all": true }
 		// https://github.com/gajus/eslint-plugin-jsdoc
 		// https://github.com/ota-meshi/eslint-plugin-yml
@@ -39,12 +39,12 @@
 	"javascript": {
 		"formatter": {
 			"semicolons": "always",
-			"quoteStyle": "single",
-		},
+			"quoteStyle": "single"
+		}
 	},
 	"json": {
 		"formatter": {
-			"trailingCommas": "none",
-		},
-	},
+			"trailingCommas": "none"
+		}
+	}
 }

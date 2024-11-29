@@ -1,8 +1,12 @@
-import * as core from '@actions/core'
+import { summary, startGroup, endGroup } from '@actions/core';
 
 export async function CodePerformance() {
-	core.startGroup('Code Performance')
+	startGroup('Code Performance');
+	summary.addHeading('Code Performance', '2');
 
-	core.endGroup()
-	return { summary: '', text: '' }
+	// https://codspeed.io/pricing
+	summary.addRaw('TBD', true);
+	summary.addCodeBlock('TBD', 'bash');
+
+	endGroup();
 }

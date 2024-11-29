@@ -1,138 +1,161 @@
-import { CheckRun } from 'src/utils/createCheckRun.js'
-import { escapeMd } from 'src/utils/escapeMd.js'
-import { execute } from 'src/utils/execute.js'
+import { endGroup, info, startGroup, summary } from '@actions/core';
 
-import { endGroup, startGroup } from '@actions/core'
+import { execute } from 'src/utils/execute.js';
+import { createCheckRun } from 'src/utils/createCheckRun.js';
+import { escapeMd } from 'src/utils/escapeMd.js';
 
 export async function CodeValidation() {
-	startGroup('Code Validation')
+	startGroup('Code Validation');
+	summary.addHeading('Code Validation', '2');
 
-	// const codeQL = await CodeQL();
-	const formatting = await CodeFormatting()
-	const linting = await CodeLinting()
+	for await (const { check, commands } of CHECKS) {
+		summary.addHeading(check.name, '2');
+		const checkRun = await createCheckRun(check);
 
-	endGroup()
-	return [formatting, linting]
-}
+		const cmdCount = { success: 0, failure: 0 };
+		for (const command of commands) {
+			const { result, stdout, stderr } = await execute(command);
+			cmdCount[result.isSuccess ? 'success' : 'failure'] += 1;
 
-// async function CodeQL() {
-// 	const pm = getInput('package-manager');
+			summary.addRaw(
+				`<b>Status:</b> ${result.isSuccess ? '✅' : '❌'} ${result.title} <br/> Executed command: <code>${command.cmd}</code>`,
+				true,
+			);
+			summary.addCodeBlock(
+				`${escapeMd(stdout)}\n\n${escapeMd(stderr)}`,
+				'bash',
+			);
+			summary.addBreak();
+		}
 
-// https://octokit.github.io/rest.js/v21/#code-scanning
-// 	const check = new CheckRun({ name: 'Formatting' });
-// 	check.create();
+		await checkRun.update({
+			isSuccess: cmdCount.failure === 0,
+			title: `${cmdCount.success} commands passed. ${cmdCount.failure} commands failed`,
+		});
 
-// 	const output = await exec(`${pm} run format`);
-// 	const isSuccess = output.includes('All checks passed');
-
-// 	// TODO - If changes, mention to fix it. Produce an error.
-
-// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
-// 	const text = `\`\`\` ${output} \`\`\``;
-
-// 	check.update({ summary, text });
-// 	return { summary, text };
-// }
-
-async function CodeFormatting() {
-	const name = 'Formatting'
-	const commands = [{ cmd: 'bun run format' }] // TODO - Get from Application Settings
-
-	const check = new CheckRun({ name })
-	check.create()
-
-	const actions = []
-	let isSuccess = true
-	let summary = ''
-	let title = ''
-	let text = ''
-
-	for (const { cmd } of commands) {
-		const { exitCode, output, error } = await execute(cmd)
-
-		// TODO - Detect Exclusions that have been made and list them as warnings
-		let exclusions = 1
-		--exclusions
-
-		const IS_SUCCESS = exitCode === 0
-		const TITLE =
-			(
-				IS_SUCCESS // TODO - Personalize as per command
-			) ?
-				`Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-			:	output.split('.')[2]
-		const SUMMARY = `<b>Status:</b> ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} <br/> Script executed: <pre lang="bash">${cmd}</pre>`
-		const TEXT = `${escapeMd(output)}\n\n${escapeMd(error)}`
-		const ACTIONS = [
-			// TODO - Personalize as per command
-			{
-				label: 'Auto Format',
-				description: 'Auto Format',
-				identifier: 'auto-format',
-			},
-		]
-
-		actions.push(...ACTIONS)
-		isSuccess &&= IS_SUCCESS
-		summary += `<br/><br/> ${SUMMARY}`
-		title += `<br/><br/> ${TITLE}`
-		text += `<br/><br/> ${TEXT}`
+		summary.addBreak();
 	}
 
-	check.update({ isSuccess, title, summary, text, actions })
-	return { name, summary, text }
+	endGroup();
 }
 
-async function CodeLinting() {
-	const name = 'Linting'
-	const commands = [
-		{ cmd: 'bun run lint:code' },
-		{ cmd: 'bun run lint:knip' },
-		{ cmd: 'bun run lint:cspell' },
-		{ cmd: 'bun run lint:md' },
-	] // TODO - Get from Application Settings
-
-	const check = new CheckRun({ name })
-	check.create()
-
-	const actions = []
-	let isSuccess = true
-	let summary = ''
-	let title = ''
-	let text = ''
-
-	for (const { cmd } of commands) {
-		const { exitCode, output, error } = await execute(cmd)
-
-		// TODO - Detect Exclusions that have been made and list them as warnings
-		let exclusions = 1
-		--exclusions
-
-		const IS_SUCCESS = exitCode === 0
-		const TITLE =
-			(
-				IS_SUCCESS // TODO - Personalize as per command
-			) ?
-				`Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-			:	output.split('.')[2]
-		const SUMMARY = `<b>Status:</b> ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} <br/> Script executed: <pre lang="bash">${cmd}</pre>`
-		const TEXT = `${escapeMd(output)}\n\n${escapeMd(error)}`
-		const ACTIONS = [
-			// TODO - Personalize as per command
+// TODO - SHIFT THE BELOW TO SERVER
+const CHECKS: {
+	check: { name: string };
+	commands: CommandType[];
+}[] = [
+	{
+		check: { name: 'Formatting' },
+		commands: [
 			{
-				label: 'Auto Format',
-				description: 'Auto Format',
-				identifier: 'auto-format',
+				cmd: 'bun run format',
+				interpret({ stderr, exitCode }) {
+					const isSuccess = exitCode === 0;
+
+					// TODO - Detect Exclusions that have been made and list them as warnings
+					let exclusions = 1;
+					--exclusions;
+
+					return {
+						isSuccess,
+						title: isSuccess
+							? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+							: stderr.split('.')[2],
+						actions: [
+							{
+								label: 'Auto Format',
+								description: 'Auto Format',
+								identifier: 'auto-format',
+							},
+						],
+					};
+				},
 			},
-		]
+		],
+	},
+	{
+		check: { name: 'Linting' },
+		commands: [
+			{
+				cmd: 'bun run lint:code',
+				interpret({ exitCode }) {
+					const isSuccess = exitCode === 0;
 
-		actions.push(...ACTIONS)
-		isSuccess &&= IS_SUCCESS
-		summary += SUMMARY
-		title += TITLE
-		text += TEXT
-	}
+					// TODO - Detect Exclusions that have been made and list them as warnings
+					let exclusions = 1;
+					--exclusions;
 
-	check.update({ isSuccess, title, summary, text, actions })
-	return { name, summary, text }
-}
+					const title = isSuccess
+						? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+						: 'Failed';
+
+					return { isSuccess, title };
+				},
+			},
+			{
+				cmd: 'bun run lint:knip',
+				interpret({ stdout }) {
+					info(`stdout: ${stdout}`);
+					info(`LENGTH: ${stdout.length}`);
+
+					const isSuccess = stdout === '# Knip report\n';
+
+					// TODO - Detect Exclusions that have been made and list them as warnings
+					let exclusions = 1;
+					--exclusions;
+
+					const title = isSuccess
+						? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+						: 'Failed';
+
+					return { isSuccess, title };
+				},
+			},
+			{
+				cmd: 'bun run lint:cspell',
+				interpret({ stderr, exitCode }) {
+					const isSuccess = exitCode === 0;
+
+					// TODO - Detect Exclusions that have been made and list them as warnings
+					let exclusions = 1;
+					--exclusions;
+
+					const title = isSuccess
+						? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+						: `Failed - Issues ${stderr.split('\n').pop()?.split(':')[3].trim()}`;
+
+					return { isSuccess, title };
+				},
+			},
+			{
+				cmd: 'bun run lint:md',
+				interpret({ exitCode }) {
+					const isSuccess = exitCode === 0;
+
+					// TODO - Detect Exclusions that have been made and list them as warnings
+					let exclusions = 1;
+					--exclusions;
+
+					const title = isSuccess
+						? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+						: 'Failed';
+
+					return { isSuccess, title };
+				},
+			},
+		],
+	},
+	// {
+	// 	check: { name: 'Code Quality' },
+	// 	commands: [
+	// 		{
+	// 			cmd: 'bun run codeql',
+	// 			interpret({ exitCode }) {
+	// 				const isSuccess = exitCode === 0;
+
+	// 				return { isSuccess };
+	// 			},
+	// 		},
+	// 	],
+	// },
+] as const;

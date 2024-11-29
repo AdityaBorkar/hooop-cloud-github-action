@@ -31670,63 +31670,50 @@ var __webpack_exports__ = {};
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(7484);
-;// CONCATENATED MODULE: ./src/functions/CodePerformance.ts
+// EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
+var exec = __nccwpck_require__(5236);
+;// CONCATENATED MODULE: ./src/utils/execute.ts
 
-async function CodePerformance() {
-    core.startGroup('Code Performance');
-    core.endGroup();
-    return { summary: '', text: '' };
+async function execute(command) {
+    let stdout = '';
+    let stderr = '';
+    const [pm, ...args] = command.cmd.split(' ');
+    const exitCode = await (0,exec.exec)(pm, args, {
+        ignoreReturnCode: true,
+        listeners: {
+            stdout: (data) => {
+                stdout += data.toString();
+            },
+            stderr: (data) => {
+                stderr += data.toString();
+            },
+        },
+    });
+    const result = command.interpret({ stdout, stderr, exitCode });
+    return { result, stdout, stderr };
 }
-
-;// CONCATENATED MODULE: ./src/functions/CodeTesting.ts
-
-async function CodeTesting() {
-    core.startGroup('Code Testing');
-    // const testing = await CodeTesting();
-    core.endGroup();
-    return { summary: '', text: '' };
-}
-// async function CodeTesting() {
-// 	const pm = getInput('package-manager');
-// 	const check = new CheckRun({ name: 'Formatting' });
-// 	check.create();
-// 	const output = await exec(`${pm} run format`);
-// 	const isSuccess = output.includes('All checks passed');
-// 	// TODO - Produce an error
-// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
-// 	const text = `\`\`\` ${output} \`\`\``;
-// 	check.update({ summary, text });
-// 	return { summary, text };
-// }
 
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(3228);
 ;// CONCATENATED MODULE: ./src/utils/createCheckRun.ts
 
 const octokit = (0,github.getOctokit)(process.env.GITHUB_TOKEN || '');
-class CheckRun {
-    name;
-    check_run_id;
-    constructor(props) {
-        this.name = props.name;
-    }
-    async create() {
-        // await octokit.rest.checks.create({
-        // 	...context.repo,
-        // 	head_sha: context.sha,
-        // 	name: this.name,
-        // 	status: 'in_progress', // TODO
-        // 	details_url: 'https://hooop.cloud', // TODO
-        // });
-        // this.check_run_id = check.data.id;
-    }
-    async update(props) {
+async function createCheckRun(check) {
+    // const checkRun = await octokit.rest.checks.create({
+    // 	...context.repo,
+    // 	head_sha: context.sha,
+    // 	name: check.name,
+    // 	status: 'in_progress', // TODO
+    // 	details_url: 'https://hooop.cloud', // TODO
+    // });
+    // const check_run_id = checkRun.data.id;
+    async function update(props) {
         // if (!this.check_run_id) throw new Error('check_run_id is required')
         const { isSuccess, title, summary, text, actions } = props;
         // return octokit.rest.repos.update({
         // 	...context.repo,
+        // 	check_run_id,
         // 	status: 'completed',
-        // 	check_run_id: this.check_run_id,
         // 	output: { title, summary, text },
         // 	actions,
         // 	// output.annotations[].path,
@@ -31741,38 +31728,17 @@ class CheckRun {
         await octokit.rest.repos.createCommitStatus({
             ...github.context.repo,
             sha: github.context.sha,
-            name: this.name,
+            name: check.name,
             state: isSuccess ? 'success' : 'failure',
             description: title,
         });
     }
+    return { update };
 }
 
 ;// CONCATENATED MODULE: ./src/utils/escapeMd.ts
 function escapeMd(text) {
     return text.replace(/([\\`*_{}[\]()#+\-.!])/g, '\\$1');
-}
-
-// EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
-var exec = __nccwpck_require__(5236);
-;// CONCATENATED MODULE: ./src/utils/execute.ts
-
-async function execute(command) {
-    const [pm, ...args] = command.split(' ');
-    let output = '';
-    let error = '';
-    const exitCode = await (0,exec.exec)(pm, args, {
-        ignoreReturnCode: true,
-        listeners: {
-            stdout: (data) => {
-                output += data.toString();
-            },
-            stderr: (data) => {
-                error += data.toString();
-            },
-        },
-    });
-    return { exitCode, output, error };
 }
 
 ;// CONCATENATED MODULE: ./src/functions/CodeValidation.ts
@@ -31782,207 +31748,159 @@ async function execute(command) {
 
 async function CodeValidation() {
     (0,core.startGroup)('Code Validation');
-    // const codeQL = await CodeQL();
-    const formatting = await CodeFormatting();
-    const linting = await CodeLinting();
+    core.summary.addHeading('Code Validation', '2');
+    for await (const { check, commands } of CHECKS) {
+        core.summary.addHeading(check.name, '2');
+        const checkRun = await createCheckRun(check);
+        const cmdCount = { success: 0, failure: 0 };
+        for (const command of commands) {
+            const { result, stdout, stderr } = await execute(command);
+            cmdCount[result.isSuccess ? 'success' : 'failure'] += 1;
+            core.summary.addRaw(`<b>Status:</b> ${result.isSuccess ? '✅' : '❌'} ${result.title} <br/> Executed command: <code>${command.cmd}</code>`, true);
+            core.summary.addCodeBlock(`${escapeMd(stdout)}\n\n${escapeMd(stderr)}`, 'bash');
+            core.summary.addBreak();
+        }
+        await checkRun.update({
+            isSuccess: cmdCount.failure === 0,
+            title: `${cmdCount.success} commands passed. ${cmdCount.failure} commands failed`,
+        });
+        core.summary.addBreak();
+    }
     (0,core.endGroup)();
-    return [formatting, linting];
 }
-// async function CodeQL() {
-// 	const pm = getInput('package-manager');
-// https://octokit.github.io/rest.js/v21/#code-scanning
-// 	const check = new CheckRun({ name: 'Formatting' });
-// 	check.create();
-// 	const output = await exec(`${pm} run format`);
-// 	const isSuccess = output.includes('All checks passed');
-// 	// TODO - If changes, mention to fix it. Produce an error.
-// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
-// 	const text = `\`\`\` ${output} \`\`\``;
-// 	check.update({ summary, text });
-// 	return { summary, text };
-// }
-async function CodeFormatting() {
-    const name = 'Formatting';
-    const commands = [{ cmd: 'bun run format' }]; // TODO - Get from Application Settings
-    const check = new CheckRun({ name });
-    check.create();
-    const actions = [];
-    let isSuccess = true;
-    let summary = '';
-    let title = '';
-    let text = '';
-    for (const { cmd } of commands) {
-        const { exitCode, output, error } = await execute(cmd);
-        // TODO - Detect Exclusions that have been made and list them as warnings
-        let exclusions = 1;
-        --exclusions;
-        const IS_SUCCESS = exitCode === 0;
-        const TITLE = (IS_SUCCESS // TODO - Personalize as per command
-        ) ?
-            `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-            : output.split('.')[2];
-        const SUMMARY = `<b>Status:</b> ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} <br/> Script executed: <pre lang="bash">${cmd}</pre>`;
-        const TEXT = `${escapeMd(output)}\n\n${escapeMd(error)}`;
-        const ACTIONS = [
-            // TODO - Personalize as per command
+// TODO - SHIFT THE BELOW TO SERVER
+const CHECKS = [
+    {
+        check: { name: 'Formatting' },
+        commands: [
             {
-                label: 'Auto Format',
-                description: 'Auto Format',
-                identifier: 'auto-format',
+                cmd: 'bun run format',
+                interpret({ stderr, exitCode }) {
+                    const isSuccess = exitCode === 0;
+                    // TODO - Detect Exclusions that have been made and list them as warnings
+                    let exclusions = 1;
+                    --exclusions;
+                    return {
+                        isSuccess,
+                        title: isSuccess
+                            ? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+                            : stderr.split('.')[2],
+                        actions: [
+                            {
+                                label: 'Auto Format',
+                                description: 'Auto Format',
+                                identifier: 'auto-format',
+                            },
+                        ],
+                    };
+                },
             },
-        ];
-        actions.push(...ACTIONS);
-        isSuccess &&= IS_SUCCESS;
-        summary += `<br/><br/> ${SUMMARY}`;
-        title += `<br/><br/> ${TITLE}`;
-        text += `<br/><br/> ${TEXT}`;
-    }
-    check.update({ isSuccess, title, summary, text, actions });
-    return { name, summary, text };
-}
-async function CodeLinting() {
-    const name = 'Linting';
-    const commands = [
-        { cmd: 'bun run lint:code' },
-        { cmd: 'bun run lint:knip' },
-        { cmd: 'bun run lint:cspell' },
-        { cmd: 'bun run lint:md' },
-    ]; // TODO - Get from Application Settings
-    const check = new CheckRun({ name });
-    check.create();
-    const actions = [];
-    let isSuccess = true;
-    let summary = '';
-    let title = '';
-    let text = '';
-    for (const { cmd } of commands) {
-        const { exitCode, output, error } = await execute(cmd);
-        // TODO - Detect Exclusions that have been made and list them as warnings
-        let exclusions = 1;
-        --exclusions;
-        const IS_SUCCESS = exitCode === 0;
-        const TITLE = (IS_SUCCESS // TODO - Personalize as per command
-        ) ?
-            `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-            : output.split('.')[2];
-        const SUMMARY = `<b>Status:</b> ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} <br/> Script executed: <pre lang="bash">${cmd}</pre>`;
-        const TEXT = `${escapeMd(output)}\n\n${escapeMd(error)}`;
-        const ACTIONS = [
-            // TODO - Personalize as per command
+        ],
+    },
+    {
+        check: { name: 'Linting' },
+        commands: [
             {
-                label: 'Auto Format',
-                description: 'Auto Format',
-                identifier: 'auto-format',
+                cmd: 'bun run lint:code',
+                interpret({ exitCode }) {
+                    const isSuccess = exitCode === 0;
+                    // TODO - Detect Exclusions that have been made and list them as warnings
+                    let exclusions = 1;
+                    --exclusions;
+                    const title = isSuccess
+                        ? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+                        : 'Failed';
+                    return { isSuccess, title };
+                },
             },
-        ];
-        actions.push(...ACTIONS);
-        isSuccess &&= IS_SUCCESS;
-        summary += SUMMARY;
-        title += TITLE;
-        text += TEXT;
-    }
-    check.update({ isSuccess, title, summary, text, actions });
-    return { name, summary, text };
-}
+            {
+                cmd: 'bun run lint:knip',
+                interpret({ stdout }) {
+                    (0,core.info)(`stdout: ${stdout}`);
+                    (0,core.info)(`LENGTH: ${stdout.length}`);
+                    const isSuccess = stdout === '# Knip report\n';
+                    // TODO - Detect Exclusions that have been made and list them as warnings
+                    let exclusions = 1;
+                    --exclusions;
+                    const title = isSuccess
+                        ? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+                        : 'Failed';
+                    return { isSuccess, title };
+                },
+            },
+            {
+                cmd: 'bun run lint:cspell',
+                interpret({ stderr, exitCode }) {
+                    const isSuccess = exitCode === 0;
+                    // TODO - Detect Exclusions that have been made and list them as warnings
+                    let exclusions = 1;
+                    --exclusions;
+                    const title = isSuccess
+                        ? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+                        : `Failed - Issues ${stderr.split('\n').pop()?.split(':')[3].trim()}`;
+                    return { isSuccess, title };
+                },
+            },
+            {
+                cmd: 'bun run lint:md',
+                interpret({ exitCode }) {
+                    const isSuccess = exitCode === 0;
+                    // TODO - Detect Exclusions that have been made and list them as warnings
+                    let exclusions = 1;
+                    --exclusions;
+                    const title = isSuccess
+                        ? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+                        : 'Failed';
+                    return { isSuccess, title };
+                },
+            },
+        ],
+    },
+    // {
+    // 	check: { name: 'Code Quality' },
+    // 	commands: [
+    // 		{
+    // 			cmd: 'bun run codeql',
+    // 			interpret({ exitCode }) {
+    // 				const isSuccess = exitCode === 0;
+    // 				return { isSuccess };
+    // 			},
+    // 		},
+    // 	],
+    // },
+];
 
-;// CONCATENATED MODULE: ./src/functions/Preview.ts
-
-async function Preview() {
-    core.startGroup('Preview');
-    // # - uses: marocchino/sticky-pull-request-comment@v2
-    // #   if: ${{ github.event_name == 'pull_request' }}
-    // #   with:
-    // #     header: pr-status-checks
-    // #     message: |
-    // #       ## 🤖 PR Summary ℹ️
-    // #       <sup>This comment is automatically generated and will be overwritten every time changes are committed to this branch.</sup>
-    // #       ### Workflows
-    // #       Workflow Name | Summary
-    // #       ------------- | -------
-    // #       Next Release Checklist | [Summary](https://github.com/github/docs/actions/runs/${{ github.run_id }}?pr=${{ github.event.pull_request.number }}#summary-${{ github.run_attempt }}})
-    // #       Lint Pull Request | [Summary](https://github.com/github/docs/actions/runs/${{ github.run_id }}?pr=${{ github.event.pull_request.number }}#summary-${{ github.run_attempt }}})
-    // #       ### Package Changes
-    // #       Merging this pull request will trigger the following releases:
-    // #       Package Name | Release Version | Release Notes
-    // #       ------------- | ------ | ----
-    // #       @letsync/core | Build Failed | [Changelog]()
-    // #       @letsync/cli | 0.2.0-next.0 | [Changelog]()
-    // #       <sup>Version numbers are subject to change until the release is published.</sup>
-    // #       ### Documentation Changes
-    // #       Preview Link - [...](...)
-    // #       Can documentation changes be applied without version release?
-    core.endGroup();
-    return { summary: '', text: '' };
-}
-// async function CodeBuilding() {
-// 	const pm = getInput('package-manager');
-// 	const check = new CheckRun({ name: 'Formatting' });
-// 	check.create();
-// 	const output = await exec(`${pm} run build:packages --output-style=stream`);
-// 	// TODO - Produce an error
-// 	const isSuccess = output.includes('All checks passed');
-// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
-// 	const text = `\`\`\` ${output} \`\`\``;
-// 	check.update({ summary, text });
-// 	return { summary, text };
-// }
-
-;// CONCATENATED MODULE: ./src/main.ts
-
-
-
+;// CONCATENATED MODULE: ./src/index.ts
 
 
 async function run() {
     try {
         // * Parameters
-        const pm = (0,core.getInput)('package-manager', { required: true });
-        if (!['bun', 'pnpm', 'npm'].includes(pm))
-            throw new Error('We support only bun, pnpm, npm as package managers');
         const GithubToken = process.env.GITHUB_TOKEN;
         if (!GithubToken)
             throw new Error('Github token is required');
-        // * Run Functions
-        const codeValidation = await CodeValidation();
-        const codeTesting = await CodeTesting();
-        const codePerformance = await CodePerformance();
-        const preview = await Preview();
         // * Job Summary:
-        core.summary.addHeading('Job Summary', '2');
-        core.summary.addList([
-            '<a href="#code-validation">Code Validation</a>',
-            '<a href="#code-testing">Code Testing</a>',
-            '<a href="#code-performance">Code Performance</a>',
-            '<a href="#preview">Preview</a>',
-        ]);
+        // summary.addHeading('Job Summary', '2')
+        // summary.addList([
+        // 	'<a href="#code-validation">Code Validation</a>',
+        // 	'<a href="#code-testing">Code Testing</a>',
+        // 	'<a href="#code-performance">Code Performance</a>',
+        // 	'<a href="#preview">Preview</a>',
+        // ])
+        // * Run Functions
+        await CodeValidation();
         core.summary.addBreak();
-        core.summary.addHeading('Code Validation', '2');
-        for (const output of codeValidation) {
-            core.summary.addHeading(output.name, '3');
-            core.summary.addRaw(output.summary, true);
-            core.summary.addCodeBlock(output.text, 'bash');
-        }
-        core.summary.addBreak();
-        core.summary.addHeading('Code Testing', '2');
-        core.summary.addRaw(codeTesting.summary, true);
-        core.summary.addCodeBlock(codeTesting.text, 'bash');
-        core.summary.addBreak();
-        core.summary.addHeading('Code Performance', '2');
-        core.summary.addRaw(codePerformance.summary, true);
-        core.summary.addCodeBlock(codePerformance.text, 'bash');
-        core.summary.addBreak();
-        core.summary.addHeading('Preview', '2');
-        core.summary.addRaw(preview.summary, true);
-        core.summary.addCodeBlock(preview.text, 'bash');
+        // await CodeTesting();
+        // summary.addBreak();
+        // await CodePerformance();
+        // summary.addBreak();
+        // await Preview();
         core.summary.write();
     }
     catch (error) {
         (0,core.setFailed)(error instanceof Error ? error.message : String(error));
     }
 }
-
-;// CONCATENATED MODULE: ./src/index.ts
-
 run();
 
 

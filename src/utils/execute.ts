@@ -1,21 +1,22 @@
-import { exec } from '@actions/exec'
+import { exec } from '@actions/exec';
 
-export async function execute(command: string) {
-	const [pm, ...args] = command.split(' ')
+export async function execute(command: CommandType) {
+	let stdout = '';
+	let stderr = '';
 
-	let output = ''
-	let error = ''
+	const [pm, ...args] = command.cmd.split(' ');
 	const exitCode = await exec(pm, args, {
 		ignoreReturnCode: true,
 		listeners: {
 			stdout: (data: Buffer) => {
-				output += data.toString()
+				stdout += data.toString();
 			},
 			stderr: (data: Buffer) => {
-				error += data.toString()
+				stderr += data.toString();
 			},
 		},
-	})
+	});
 
-	return { exitCode, output, error }
+	const result = command.interpret({ stdout, stderr, exitCode });
+	return { result, stdout, stderr };
 }

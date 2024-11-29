@@ -1,28 +1,17 @@
-import * as core from '@actions/core'
+import { endGroup, summary } from '@actions/core';
+import { startGroup } from '@actions/core';
 
 export async function CodeTesting() {
-	core.startGroup('Code Testing')
+	startGroup('Code Testing');
+	summary.addHeading('Code Testing', '2');
 
-	// const testing = await CodeTesting();
+	summary.addHeading('Test Results', '3');
+	summary.addRaw('TBD', true);
+	summary.addCodeBlock('TBD', 'bash');
 
-	core.endGroup()
-	return { summary: '', text: '' }
+	summary.addHeading('Test Coverage', '3');
+	summary.addRaw('TBD', true);
+	summary.addCodeBlock('TBD', 'bash');
+
+	endGroup();
 }
-
-// async function CodeTesting() {
-// 	const pm = getInput('package-manager');
-
-// 	const check = new CheckRun({ name: 'Formatting' });
-// 	check.create();
-
-// 	const output = await exec(`${pm} run format`);
-// 	const isSuccess = output.includes('All checks passed');
-
-// 	// TODO - Produce an error
-
-// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
-// 	const text = `\`\`\` ${output} \`\`\``;
-
-// 	check.update({ summary, text });
-// 	return { summary, text };
-// }
