@@ -31748,6 +31748,11 @@ class CheckRun {
     }
 }
 
+;// CONCATENATED MODULE: ./src/utils/escapeMd.ts
+function escapeMd(text) {
+    return text.replace(/([\\`*_{}[\]()#+\-.!])/g, '\\$1');
+}
+
 // EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
 var exec = __nccwpck_require__(5236);
 ;// CONCATENATED MODULE: ./src/utils/execute.ts
@@ -31771,6 +31776,7 @@ async function execute(command) {
 }
 
 ;// CONCATENATED MODULE: ./src/functions/CodeValidation.ts
+
 
 
 
@@ -31815,8 +31821,8 @@ async function CodeFormatting() {
         ) ?
             `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
             : output.split('.')[2];
-        const SUMMARY = `**Status:** ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} \n <sub>Script executed = \`${cmd}\`</sub>`;
-        const TEXT = `\`\`\` ${output} \`\`\``;
+        const SUMMARY = `<b>Status:</b> ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} <br/> Script executed: <pre lang="bash">${cmd}</pre>`;
+        const TEXT = `${escapeMd(output)}\n\n${escapeMd(error)}`;
         const ACTIONS = [
             // TODO - Personalize as per command
             {
@@ -31827,9 +31833,9 @@ async function CodeFormatting() {
         ];
         actions.push(...ACTIONS);
         isSuccess &&= IS_SUCCESS;
-        summary += SUMMARY;
-        title += TITLE;
-        text += TEXT;
+        summary += `<br/><br/> ${SUMMARY}`;
+        title += `<br/><br/> ${TITLE}`;
+        text += `<br/><br/> ${TEXT}`;
     }
     check.update({ isSuccess, title, summary, text, actions });
     return { name, summary, text };
@@ -31859,8 +31865,8 @@ async function CodeLinting() {
         ) ?
             `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
             : output.split('.')[2];
-        const SUMMARY = `**Status:** ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} \n <sub>Script executed = \`${cmd}\`</sub>`;
-        const TEXT = `\`\`\` ${output} \`\`\``;
+        const SUMMARY = `<b>Status:</b> ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} <br/> Script executed: <pre lang="bash">${cmd}</pre>`;
+        const TEXT = `${escapeMd(output)}\n\n${escapeMd(error)}`;
         const ACTIONS = [
             // TODO - Personalize as per command
             {
@@ -31944,10 +31950,10 @@ async function run() {
         // * Job Summary:
         core.summary.addHeading('Job Summary', '2');
         core.summary.addList([
-            '[Code Validation](#code-validation)',
-            '[Code Testing](#code-testing)',
-            '[Code Performance](#code-performance)',
-            '[Preview](#preview)',
+            '<a href="#code-validation">Code Validation</a>',
+            '<a href="#code-testing">Code Testing</a>',
+            '<a href="#code-performance">Code Performance</a>',
+            '<a href="#preview">Preview</a>',
         ]);
         core.summary.addBreak();
         core.summary.addHeading('Code Validation', '2');

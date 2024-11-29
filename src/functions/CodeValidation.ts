@@ -1,4 +1,5 @@
 import { CheckRun } from 'src/utils/createCheckRun.js'
+import { escapeMd } from 'src/utils/escapeMd.js'
 import { execute } from 'src/utils/execute.js'
 
 import { endGroup, startGroup } from '@actions/core'
@@ -60,8 +61,8 @@ async function CodeFormatting() {
 			) ?
 				`Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
 			:	output.split('.')[2]
-		const SUMMARY = `**Status:** ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} \n <sub>Script executed = \`${cmd}\`</sub>`
-		const TEXT = `\`\`\` ${output} \`\`\``
+		const SUMMARY = `<b>Status:</b> ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} <br/> Script executed: <pre lang="bash">${cmd}</pre>`
+		const TEXT = `${escapeMd(output)}\n\n${escapeMd(error)}`
 		const ACTIONS = [
 			// TODO - Personalize as per command
 			{
@@ -73,9 +74,9 @@ async function CodeFormatting() {
 
 		actions.push(...ACTIONS)
 		isSuccess &&= IS_SUCCESS
-		summary += SUMMARY
-		title += TITLE
-		text += TEXT
+		summary += `<br/><br/> ${SUMMARY}`
+		title += `<br/><br/> ${TITLE}`
+		text += `<br/><br/> ${TEXT}`
 	}
 
 	check.update({ isSuccess, title, summary, text, actions })
@@ -114,8 +115,8 @@ async function CodeLinting() {
 			) ?
 				`Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
 			:	output.split('.')[2]
-		const SUMMARY = `**Status:** ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} \n <sub>Script executed = \`${cmd}\`</sub>`
-		const TEXT = `\`\`\` ${output} \`\`\``
+		const SUMMARY = `<b>Status:</b> ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} <br/> Script executed: <pre lang="bash">${cmd}</pre>`
+		const TEXT = `${escapeMd(output)}\n\n${escapeMd(error)}`
 		const ACTIONS = [
 			// TODO - Personalize as per command
 			{

@@ -26,10 +26,10 @@ export async function run() {
 
 		summary.addHeading('Job Summary', '2')
 		summary.addList([
-			'[Code Validation](#code-validation)',
-			'[Code Testing](#code-testing)',
-			'[Code Performance](#code-performance)',
-			'[Preview](#preview)',
+			'<a href="#code-validation">Code Validation</a>',
+			'<a href="#code-testing">Code Testing</a>',
+			'<a href="#code-performance">Code Performance</a>',
+			'<a href="#preview">Preview</a>',
 		])
 
 		summary.addBreak()
