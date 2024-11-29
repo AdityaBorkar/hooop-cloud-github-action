@@ -25,37 +25,37 @@ export async function run() {
 		// * Job Summary:
 
 		summary.addHeading('Job Summary', '2')
-		summary.addSeparator()
-		summary.addList(
-			[
-				'[Code Validation](##CodeValidation)',
-				'[Code Testing](##CodeTesting)',
-				'[Code Performance](##CodePerformance)',
-				'[Preview](##Preview)',
-			],
-			true,
-		)
+		summary.addList([
+			'[Code Validation](#code-validation)',
+			'[Code Testing](#code-testing)',
+			'[Code Performance](#code-performance)',
+			'[Preview](#preview)',
+		])
+
 		summary.addBreak()
-
 		summary.addHeading('Code Validation', '2')
-		summary.addSeparator()
-		summary.addRaw(codeValidation.summary, true)
-		summary.addCodeBlock(codeValidation.text, 'bash')
+		for (const output of codeValidation) {
+			summary.addHeading(output.name, '3')
+			summary.addRaw(output.summary, true)
+			summary.addCodeBlock(output.text, 'bash')
+		}
 
+		summary.addBreak()
 		summary.addHeading('Code Testing', '2')
-		summary.addSeparator()
 		summary.addRaw(codeTesting.summary, true)
 		summary.addCodeBlock(codeTesting.text, 'bash')
 
+		summary.addBreak()
 		summary.addHeading('Code Performance', '2')
-		summary.addSeparator()
 		summary.addRaw(codePerformance.summary, true)
 		summary.addCodeBlock(codePerformance.text, 'bash')
 
+		summary.addBreak()
 		summary.addHeading('Preview', '2')
-		summary.addSeparator()
 		summary.addRaw(preview.summary, true)
 		summary.addCodeBlock(preview.text, 'bash')
+
+		summary.write()
 	} catch (error: unknown) {
 		setFailed(error instanceof Error ? error.message : String(error))
 	}

@@ -31750,32 +31750,38 @@ class CheckRun {
 
 // EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
 var exec = __nccwpck_require__(5236);
+;// CONCATENATED MODULE: ./src/utils/execute.ts
+
+async function execute(command) {
+    const [pm, ...args] = command.split(' ');
+    let output = '';
+    let error = '';
+    const exitCode = await (0,exec.exec)(pm, args, {
+        ignoreReturnCode: true,
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            },
+            stderr: (data) => {
+                error += data.toString();
+            },
+        },
+    });
+    return { exitCode, output, error };
+}
+
 ;// CONCATENATED MODULE: ./src/functions/CodeValidation.ts
 
 
 
 async function CodeValidation() {
-    core.startGroup('Code Validation');
-    // const gitGuardian = await GitGuardian();
+    (0,core.startGroup)('Code Validation');
     // const codeQL = await CodeQL();
     const formatting = await CodeFormatting();
-    // const linting = await CodeLinting();
-    core.endGroup();
-    return { summary: formatting.summary, text: formatting.text };
+    const linting = await CodeLinting();
+    (0,core.endGroup)();
+    return [formatting, linting];
 }
-// async function GitGuardian() {
-// 	const pm = getInput('package-manager');
-// https://octokit.github.io/rest.js/v21/#secret-scanning-get-alert
-// 	const check = new CheckRun({ name: 'GitGuardian' });
-// 	check.create();
-// 	const output = await exec(`${pm} run format`);
-// 	const isSuccess = output.includes('All checks passed');
-// 	// TODO - If changes, mention to fix it. Produce an error.
-// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
-// 	const text = `\`\`\` ${output} \`\`\``;
-// 	check.update({ summary, text });
-// 	return { summary, text };
-// }
 // async function CodeQL() {
 // 	const pm = getInput('package-manager');
 // https://octokit.github.io/rest.js/v21/#code-scanning
@@ -31790,66 +31796,88 @@ async function CodeValidation() {
 // 	return { summary, text };
 // }
 async function CodeFormatting() {
-    const command = 'bun run format'; // TODO - Get from Application Settings
-    const [pm, ...args] = command.split(' ');
-    const check = new CheckRun({ name: 'Formatting' });
+    const name = 'Formatting';
+    const commands = [{ cmd: 'bun run format' }]; // TODO - Get from Application Settings
+    const check = new CheckRun({ name });
     check.create();
-    let output = '';
-    let error = '';
-    const exitCode = await (0,exec.exec)(pm, args, {
-        ignoreReturnCode: true,
-        listeners: {
-            stdout: (data) => {
-                output += data.toString();
+    const actions = [];
+    let isSuccess = true;
+    let summary = '';
+    let title = '';
+    let text = '';
+    for (const { cmd } of commands) {
+        const { exitCode, output, error } = await execute(cmd);
+        // TODO - Detect Exclusions that have been made and list them as warnings
+        let exclusions = 1;
+        --exclusions;
+        const IS_SUCCESS = exitCode === 0;
+        const TITLE = (IS_SUCCESS // TODO - Personalize as per command
+        ) ?
+            `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+            : output.split('.')[2];
+        const SUMMARY = `**Status:** ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} \n <sub>Script executed = \`${cmd}\`</sub>`;
+        const TEXT = `\`\`\` ${output} \`\`\``;
+        const ACTIONS = [
+            // TODO - Personalize as per command
+            {
+                label: 'Auto Format',
+                description: 'Auto Format',
+                identifier: 'auto-format',
             },
-            stderr: (data) => {
-                error += data.toString();
-            },
-        },
-    });
-    // TODO - Detect Exclusions that have been made and list them as warnings
-    let exclusions = 4;
-    --exclusions;
-    core.info(`exitCode = ${exitCode}`); // ? REMOVE
-    core.info(`OUTPUT = ${output}`); // ? REMOVE
-    core.info(`ERROR = ${error}`); // ? REMOVE
-    const isSuccess = exitCode === 0;
-    const title = isSuccess ?
-        `Passed with ${exclusions !== 0 ? `${exclusions} exclusions` : ''}`
-        : '3 errors and 2 warnings'; // TODO
-    const summary = `Status: ${isSuccess ? '✅ Success' : '❌ Failure'}\n <sub>Script executed = \`${pm} run format\`</sub>`;
-    const text = `\`\`\` ${output} \`\`\``;
-    const actions = [
-        {
-            label: 'Auto Format',
-            description: 'Auto Format',
-            identifier: 'auto-format',
-        },
-    ];
+        ];
+        actions.push(...ACTIONS);
+        isSuccess &&= IS_SUCCESS;
+        summary += SUMMARY;
+        title += TITLE;
+        text += TEXT;
+    }
     check.update({ isSuccess, title, summary, text, actions });
-    return { summary, text };
+    return { name, summary, text };
 }
-// async function CodeLinting() {
-// 	const pm = getInput('package-manager');
-// 	const check = new CheckRun({ name: 'Formatting' });
-// 	check.create();
-// 	const code = await exec(`${pm} run lint:code`);
-// 	const knip = await exec(`${pm} run lint:knip`);
-// 	const spell = await exec(`${pm} run lint:cspell`);
-// 	const md = await exec(`${pm} run lint:md`);
-// 	// TODO - Detect Exclusions that have been made and list them as warnings
-// 	// TODO - Produce an error
-// 	// TODO - Button: Auto Format
-// 	const isSuccess =
-// 		spell.includes('All checks passed') &&
-// 		knip.includes('All checks passed') &&
-// 		code.includes('All checks passed') &&
-// 		md.includes('All checks passed');
-// 	const summary = `Status: ${isSuccess ? 'Success' : 'Failure'}\nScript ran = \`${pm} run all\` (TEXT SM)`;
-// 	const text = `\`\`\` ${output} \`\`\``;
-// 	check.update({ summary, text });
-// 	return { summary, text };
-// }
+async function CodeLinting() {
+    const name = 'Linting';
+    const commands = [
+        { cmd: 'bun run lint:code' },
+        { cmd: 'bun run lint:knip' },
+        { cmd: 'bun run lint:cspell' },
+        { cmd: 'bun run lint:md' },
+    ]; // TODO - Get from Application Settings
+    const check = new CheckRun({ name });
+    check.create();
+    const actions = [];
+    let isSuccess = true;
+    let summary = '';
+    let title = '';
+    let text = '';
+    for (const { cmd } of commands) {
+        const { exitCode, output, error } = await execute(cmd);
+        // TODO - Detect Exclusions that have been made and list them as warnings
+        let exclusions = 1;
+        --exclusions;
+        const IS_SUCCESS = exitCode === 0;
+        const TITLE = (IS_SUCCESS // TODO - Personalize as per command
+        ) ?
+            `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
+            : output.split('.')[2];
+        const SUMMARY = `**Status:** ${IS_SUCCESS ? '✅' : '❌'} ${TITLE} \n <sub>Script executed = \`${cmd}\`</sub>`;
+        const TEXT = `\`\`\` ${output} \`\`\``;
+        const ACTIONS = [
+            // TODO - Personalize as per command
+            {
+                label: 'Auto Format',
+                description: 'Auto Format',
+                identifier: 'auto-format',
+            },
+        ];
+        actions.push(...ACTIONS);
+        isSuccess &&= IS_SUCCESS;
+        summary += SUMMARY;
+        title += TITLE;
+        text += TEXT;
+    }
+    check.update({ isSuccess, title, summary, text, actions });
+    return { name, summary, text };
+}
 
 ;// CONCATENATED MODULE: ./src/functions/Preview.ts
 
@@ -31915,30 +31943,32 @@ async function run() {
         const preview = await Preview();
         // * Job Summary:
         core.summary.addHeading('Job Summary', '2');
-        core.summary.addSeparator();
         core.summary.addList([
-            '[Code Validation](##CodeValidation)',
-            '[Code Testing](##CodeTesting)',
-            '[Code Performance](##CodePerformance)',
-            '[Preview](##Preview)',
-        ], true);
+            '[Code Validation](#code-validation)',
+            '[Code Testing](#code-testing)',
+            '[Code Performance](#code-performance)',
+            '[Preview](#preview)',
+        ]);
         core.summary.addBreak();
         core.summary.addHeading('Code Validation', '2');
-        core.summary.addSeparator();
-        core.summary.addRaw(codeValidation.summary, true);
-        core.summary.addCodeBlock(codeValidation.text, 'bash');
+        for (const output of codeValidation) {
+            core.summary.addHeading(output.name, '3');
+            core.summary.addRaw(output.summary, true);
+            core.summary.addCodeBlock(output.text, 'bash');
+        }
+        core.summary.addBreak();
         core.summary.addHeading('Code Testing', '2');
-        core.summary.addSeparator();
         core.summary.addRaw(codeTesting.summary, true);
         core.summary.addCodeBlock(codeTesting.text, 'bash');
+        core.summary.addBreak();
         core.summary.addHeading('Code Performance', '2');
-        core.summary.addSeparator();
         core.summary.addRaw(codePerformance.summary, true);
         core.summary.addCodeBlock(codePerformance.text, 'bash');
+        core.summary.addBreak();
         core.summary.addHeading('Preview', '2');
-        core.summary.addSeparator();
         core.summary.addRaw(preview.summary, true);
         core.summary.addCodeBlock(preview.text, 'bash');
+        core.summary.write();
     }
     catch (error) {
         (0,core.setFailed)(error instanceof Error ? error.message : String(error));
