@@ -1,4 +1,4 @@
-import { endGroup, info, startGroup, summary } from '@actions/core';
+import { debug, endGroup, info, startGroup, summary } from '@actions/core';
 
 import { execute } from 'src/utils/execute.js';
 import { createCheckRun } from 'src/utils/createCheckRun.js';
@@ -113,16 +113,20 @@ const CHECKS: {
 			},
 			{
 				cmd: 'bun run lint:cspell',
-				interpret({ stderr, exitCode }) {
+				interpret({ stdout, stderr, exitCode }) {
 					const isSuccess = exitCode === 0;
 
 					// TODO - Detect Exclusions that have been made and list them as warnings
 					let exclusions = 1;
 					--exclusions;
 
+					debug(`stdout: ${stdout}`);
+					debug(`stderr: ${stderr}`);
+					debug(`exitCode: ${exitCode}`);
+
 					const title = isSuccess
 						? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-						: `Failed - Issues ${stderr.split('\n').pop()?.split(':')[3].trim()}`;
+						: `Failed - Issues ${stderr.split('\n').pop()?.split(':')[3]?.trim()}`;
 
 					return { isSuccess, title };
 				},

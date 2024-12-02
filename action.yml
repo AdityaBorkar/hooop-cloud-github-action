@@ -9,6 +9,7 @@ branding:
 runs:
   using: node20
   main: dist/index.js
+
 # inputs:
 #   package-manager:
 #     description: 'The package manager to use'
