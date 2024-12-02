@@ -28,10 +28,6 @@ export async function createCheckRun(check: { name: string }) {
 
 		const { isSuccess, title, summary, text, actions } = props;
 
-		info('CREATE CHECK RUN');
-		info(`state: ${isSuccess ? 'success' : 'failure'}`);
-		info(`description: ${title}`);
-
 		// return octokit.rest.repos.update({
 		// 	...context.repo,
 		// 	check_run_id,
@@ -49,9 +45,13 @@ export async function createCheckRun(check: { name: string }) {
 
 		// ? WORKAROUND - WE ARE USING COMMIT STATUSES INSTEAD OF CHECK RUNS UNTIL THE APP IS PUBLISHED
 
+		const pull_number = Number(context.payload.pull_request?.number);
+		if (!pull_number) throw new Error('pull_request.number is required');
+
+		const pr = await octokit.rest.pulls.get({ ...context.repo, pull_number });
 		const status = await octokit.rest.repos.createCommitStatus({
 			...context.repo,
-			sha: context.sha,
+			sha: pr.data.head.sha,
 			name: check.name,
 			state: isSuccess ? 'success' : 'failure',
 			description: title,

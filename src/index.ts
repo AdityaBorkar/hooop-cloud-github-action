@@ -1,3 +1,4 @@
+import { context } from '@actions/github';
 import { CodePerformance } from './functions/CodePerformance.js';
 import { CodeTesting } from './functions/CodeTesting.js';
 import { CodeValidation } from './functions/CodeValidation.js';
@@ -10,6 +11,9 @@ async function run() {
 
 		const GithubToken = process.env.GITHUB_TOKEN;
 		if (!GithubToken) throw new Error('Github token is required');
+
+		if (!context.payload.pull_request)
+			throw new Error('This action must be run in a pull request');
 
 		// * Job Summary:
 

@@ -31668,6 +31668,8 @@ module.exports = parseParams
 /************************************************************************/
 var __webpack_exports__ = {};
 
+// EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
+var github = __nccwpck_require__(3228);
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(7484);
 // EXTERNAL MODULE: ./node_modules/@actions/exec/lib/exec.js
@@ -31693,8 +31695,6 @@ async function execute(command) {
     return { result, stdout, stderr };
 }
 
-// EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
-var github = __nccwpck_require__(3228);
 ;// CONCATENATED MODULE: ./src/utils/createCheckRun.ts
 
 
@@ -31711,9 +31711,6 @@ async function createCheckRun(check) {
     async function update(props) {
         // if (!this.check_run_id) throw new Error('check_run_id is required')
         const { isSuccess, title, summary, text, actions } = props;
-        (0,core.info)('CREATE CHECK RUN');
-        (0,core.info)(`state: ${isSuccess ? 'success' : 'failure'}`);
-        (0,core.info)(`description: ${title}`);
         // return octokit.rest.repos.update({
         // 	...context.repo,
         // 	check_run_id,
@@ -31729,9 +31726,13 @@ async function createCheckRun(check) {
         // 	// output.images[].image_url,
         // });
         // ? WORKAROUND - WE ARE USING COMMIT STATUSES INSTEAD OF CHECK RUNS UNTIL THE APP IS PUBLISHED
+        const pull_number = Number(github.context.payload.pull_request?.number);
+        if (!pull_number)
+            throw new Error('pull_request.number is required');
+        const pr = await octokit.rest.pulls.get({ ...github.context.repo, pull_number });
         const status = await octokit.rest.repos.createCommitStatus({
             ...github.context.repo,
-            sha: github.context.sha,
+            sha: pr.data.head.sha,
             name: check.name,
             state: isSuccess ? 'success' : 'failure',
             description: title,
@@ -31877,12 +31878,15 @@ const CHECKS = [
 ;// CONCATENATED MODULE: ./src/index.ts
 
 
+
 async function run() {
     try {
         // * Parameters
         const GithubToken = process.env.GITHUB_TOKEN;
         if (!GithubToken)
             throw new Error('Github token is required');
+        if (!github.context.payload.pull_request)
+            throw new Error('This action must be run in a pull request');
         // * Job Summary:
         // summary.addHeading('Job Summary', '2')
         // summary.addList([
