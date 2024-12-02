@@ -31674,6 +31674,7 @@ var core = __nccwpck_require__(7484);
 var exec = __nccwpck_require__(5236);
 ;// CONCATENATED MODULE: ./src/utils/execute.ts
 
+
 async function execute(command) {
     let stdout = '';
     let stderr = '';
@@ -31689,6 +31690,9 @@ async function execute(command) {
             },
         },
     });
+    (0,core.info)(`stdout: ${stdout}`);
+    (0,core.info)(`stderr: ${stderr}`);
+    (0,core.info)(`exitCode: ${exitCode}`);
     const result = command.interpret({ stdout, stderr, exitCode });
     return { result, stdout, stderr };
 }
@@ -31696,6 +31700,7 @@ async function execute(command) {
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(3228);
 ;// CONCATENATED MODULE: ./src/utils/createCheckRun.ts
+
 
 const octokit = (0,github.getOctokit)(process.env.GITHUB_TOKEN || '');
 async function createCheckRun(check) {
@@ -31710,6 +31715,9 @@ async function createCheckRun(check) {
     async function update(props) {
         // if (!this.check_run_id) throw new Error('check_run_id is required')
         const { isSuccess, title, summary, text, actions } = props;
+        (0,core.info)('CREATE CHECK RUN');
+        (0,core.info)(`state: ${isSuccess ? 'success' : 'failure'}`);
+        (0,core.info)(`description: ${title}`);
         // return octokit.rest.repos.update({
         // 	...context.repo,
         // 	check_run_id,
@@ -31816,9 +31824,7 @@ const CHECKS = [
             {
                 cmd: 'bun run lint:knip',
                 interpret({ stdout }) {
-                    (0,core.info)(`stdout: ${stdout}`);
-                    (0,core.info)(`LENGTH: ${stdout.length}`);
-                    const isSuccess = stdout === '# Knip report\n';
+                    const isSuccess = stdout.trim() === '# Knip report';
                     // TODO - Detect Exclusions that have been made and list them as warnings
                     let exclusions = 1;
                     --exclusions;
@@ -31837,7 +31843,7 @@ const CHECKS = [
                     --exclusions;
                     const title = isSuccess
                         ? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-                        : `Failed - Issues ${stderr.split('\n').pop()?.split(':')[3].trim()}`;
+                        : `Failed - Issues ${stderr?.trim().split(':').pop()?.trim()}`;
                     return { isSuccess, title };
                 },
             },
