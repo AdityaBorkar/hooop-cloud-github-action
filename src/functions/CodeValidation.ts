@@ -10,7 +10,7 @@ export async function CodeValidation() {
 
 	for await (const { check, commands } of CHECKS) {
 		summary.addHeading(check.name, '2');
-		const checkRun = await createCheckRun(check);
+		const checkRun = await createCheckRun(check); // ! CAN CREATE ONLY ONE COMMIT STATUS / CHECK RUN PER pr
 
 		const cmdCount = { success: 0, failure: 0 };
 		for (const command of commands) {
@@ -29,7 +29,7 @@ export async function CodeValidation() {
 
 		await checkRun.update({
 			isSuccess: cmdCount.failure === 0,
-			title: `${cmdCount.success} commands passed. ${cmdCount.failure} commands failed`,
+			title: `${cmdCount.success} passed. ${cmdCount.failure} failed.`,
 		});
 
 		summary.addBreak();

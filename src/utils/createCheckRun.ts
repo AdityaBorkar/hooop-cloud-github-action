@@ -24,10 +24,9 @@ export async function createCheckRun(check: { name: string }) {
 			identifier: string;
 		}[];
 	}) {
-		// if (!this.check_run_id) throw new Error('check_run_id is required')
-
 		const { isSuccess, title, summary, text, actions } = props;
 
+		// if (!this.check_run_id) throw new Error('check_run_id is required')
 		// return octokit.rest.repos.update({
 		// 	...context.repo,
 		// 	check_run_id,
@@ -53,12 +52,10 @@ export async function createCheckRun(check: { name: string }) {
 			...context.repo,
 			sha: pr.data.head.sha,
 			name: check.name,
+			context: check.name,
 			state: isSuccess ? 'success' : 'failure',
 			description: title,
 		});
-
-		info(`http: ${status.status}`);
-		info(`response: ${JSON.stringify(status, null, 4)}`);
 	}
 
 	return { update };

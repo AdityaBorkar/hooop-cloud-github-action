@@ -31697,7 +31697,6 @@ async function execute(command) {
 
 ;// CONCATENATED MODULE: ./src/utils/createCheckRun.ts
 
-
 const octokit = (0,github.getOctokit)(process.env.GITHUB_TOKEN || '');
 async function createCheckRun(check) {
     // const checkRun = await octokit.rest.checks.create({
@@ -31709,8 +31708,8 @@ async function createCheckRun(check) {
     // });
     // const check_run_id = checkRun.data.id;
     async function update(props) {
-        // if (!this.check_run_id) throw new Error('check_run_id is required')
         const { isSuccess, title, summary, text, actions } = props;
+        // if (!this.check_run_id) throw new Error('check_run_id is required')
         // return octokit.rest.repos.update({
         // 	...context.repo,
         // 	check_run_id,
@@ -31734,11 +31733,10 @@ async function createCheckRun(check) {
             ...github.context.repo,
             sha: pr.data.head.sha,
             name: check.name,
+            context: check.name,
             state: isSuccess ? 'success' : 'failure',
             description: title,
         });
-        (0,core.info)(`http: ${status.status}`);
-        (0,core.info)(`response: ${JSON.stringify(status, null, 4)}`);
     }
     return { update };
 }
@@ -31758,7 +31756,7 @@ async function CodeValidation() {
     core.summary.addHeading('Code Validation', '2');
     for await (const { check, commands } of CHECKS) {
         core.summary.addHeading(check.name, '2');
-        const checkRun = await createCheckRun(check);
+        const checkRun = await createCheckRun(check); // ! CAN CREATE ONLY ONE COMMIT STATUS / CHECK RUN PER pr
         const cmdCount = { success: 0, failure: 0 };
         for (const command of commands) {
             const { result, stdout, stderr } = await execute(command);
@@ -31768,7 +31766,7 @@ async function CodeValidation() {
         }
         await checkRun.update({
             isSuccess: cmdCount.failure === 0,
-            title: `${cmdCount.success} commands passed. ${cmdCount.failure} commands failed`,
+            title: `${cmdCount.success} passed. ${cmdCount.failure} failed.`,
         });
         core.summary.addBreak();
     }
