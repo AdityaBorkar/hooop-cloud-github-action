@@ -95,14 +95,14 @@ const CHECKS: {
 			{
 				cmd: 'bun run lint:knip',
 				interpret({ stdout }) {
-					info(`stdout: ${stdout}`);
-					info(`LENGTH: ${stdout.length}`);
-
-					const isSuccess = stdout === '# Knip report\n';
+					const isSuccess = stdout.trim() === '# Knip report';
 
 					// TODO - Detect Exclusions that have been made and list them as warnings
 					let exclusions = 1;
 					--exclusions;
+
+					info(`stdout: ${stdout}`);
+					info(`LENGTH: ${stdout.length}`);
 
 					const title = isSuccess
 						? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
@@ -120,13 +120,13 @@ const CHECKS: {
 					let exclusions = 1;
 					--exclusions;
 
-					debug(`stdout: ${stdout}`);
-					debug(`stderr: ${stderr}`);
-					debug(`exitCode: ${exitCode}`);
+					info(`stdout: ${stdout}`);
+					info(`stderr: ${stderr}`);
+					info(`exitCode: ${exitCode}`);
 
 					const title = isSuccess
 						? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-						: `Failed - Issues ${stderr.split('\n').pop()?.split(':')[3]?.trim()}`;
+						: `Failed - Issues ${stderr.trim().split(':').pop()?.trim()}`;
 
 					return { isSuccess, title };
 				},
