@@ -1,3 +1,4 @@
+import { info } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 
 const octokit = getOctokit(process.env.GITHUB_TOKEN || '');
@@ -26,6 +27,10 @@ export async function createCheckRun(check: { name: string }) {
 		// if (!this.check_run_id) throw new Error('check_run_id is required')
 
 		const { isSuccess, title, summary, text, actions } = props;
+
+		info('CREATE CHECK RUN');
+		info(`state: ${isSuccess ? 'success' : 'failure'}`);
+		info(`description: ${title}`);
 
 		// return octokit.rest.repos.update({
 		// 	...context.repo,
