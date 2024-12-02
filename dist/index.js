@@ -31674,7 +31674,6 @@ var core = __nccwpck_require__(7484);
 var exec = __nccwpck_require__(5236);
 ;// CONCATENATED MODULE: ./src/utils/execute.ts
 
-
 async function execute(command) {
     let stdout = '';
     let stderr = '';
@@ -31690,9 +31689,6 @@ async function execute(command) {
             },
         },
     });
-    (0,core.info)(`stdout: ${stdout}`);
-    (0,core.info)(`stderr: ${stderr}`);
-    (0,core.info)(`exitCode: ${exitCode}`);
     const result = command.interpret({ stdout, stderr, exitCode });
     return { result, stdout, stderr };
 }
@@ -31733,13 +31729,15 @@ async function createCheckRun(check) {
         // 	// output.images[].image_url,
         // });
         // ? WORKAROUND - WE ARE USING COMMIT STATUSES INSTEAD OF CHECK RUNS UNTIL THE APP IS PUBLISHED
-        await octokit.rest.repos.createCommitStatus({
+        const status = await octokit.rest.repos.createCommitStatus({
             ...github.context.repo,
             sha: github.context.sha,
             name: check.name,
             state: isSuccess ? 'success' : 'failure',
             description: title,
         });
+        (0,core.info)(`http: ${status.status}`);
+        (0,core.info)(`response: ${JSON.stringify(status, null, 4)}`);
     }
     return { update };
 }
@@ -31766,7 +31764,6 @@ async function CodeValidation() {
             cmdCount[result.isSuccess ? 'success' : 'failure'] += 1;
             core.summary.addRaw(`<b>Status:</b> ${result.isSuccess ? '✅' : '❌'} ${result.title} <br/> Executed command: <code>${command.cmd}</code>`, true);
             core.summary.addCodeBlock(`${escapeMd(stdout)}\n\n${escapeMd(stderr)}`, 'bash');
-            core.summary.addBreak();
         }
         await checkRun.update({
             isSuccess: cmdCount.failure === 0,
@@ -31783,7 +31780,7 @@ const CHECKS = [
         commands: [
             {
                 cmd: 'bun run format',
-                interpret({ stderr, exitCode }) {
+                interpret({ exitCode }) {
                     const isSuccess = exitCode === 0;
                     // TODO - Detect Exclusions that have been made and list them as warnings
                     let exclusions = 1;
@@ -31792,7 +31789,7 @@ const CHECKS = [
                         isSuccess,
                         title: isSuccess
                             ? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-                            : stderr.split('.')[2],
+                            : 'Failed', // stderr.split('\n');
                         actions: [
                             {
                                 label: 'Auto Format',
@@ -31841,9 +31838,10 @@ const CHECKS = [
                     // TODO - Detect Exclusions that have been made and list them as warnings
                     let exclusions = 1;
                     --exclusions;
+                    const logs = stderr?.trim().split(':');
                     const title = isSuccess
                         ? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-                        : `Failed - Issues ${stderr?.trim().split(':').pop()?.trim()}`;
+                        : `Failed - Issues ${logs[logs.length - 2].trim()}`;
                     return { isSuccess, title };
                 },
             },

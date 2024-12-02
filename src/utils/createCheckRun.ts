@@ -49,13 +49,16 @@ export async function createCheckRun(check: { name: string }) {
 
 		// ? WORKAROUND - WE ARE USING COMMIT STATUSES INSTEAD OF CHECK RUNS UNTIL THE APP IS PUBLISHED
 
-		await octokit.rest.repos.createCommitStatus({
+		const status = await octokit.rest.repos.createCommitStatus({
 			...context.repo,
 			sha: context.sha,
 			name: check.name,
 			state: isSuccess ? 'success' : 'failure',
 			description: title,
 		});
+
+		info(`http: ${status.status}`);
+		info(`response: ${JSON.stringify(status, null, 4)}`);
 	}
 
 	return { update };

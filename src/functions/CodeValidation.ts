@@ -25,7 +25,6 @@ export async function CodeValidation() {
 				`${escapeMd(stdout)}\n\n${escapeMd(stderr)}`,
 				'bash',
 			);
-			summary.addBreak();
 		}
 
 		await checkRun.update({
@@ -49,7 +48,7 @@ const CHECKS: {
 		commands: [
 			{
 				cmd: 'bun run format',
-				interpret({ stderr, exitCode }) {
+				interpret({ exitCode }) {
 					const isSuccess = exitCode === 0;
 
 					// TODO - Detect Exclusions that have been made and list them as warnings
@@ -60,7 +59,7 @@ const CHECKS: {
 						isSuccess,
 						title: isSuccess
 							? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-							: stderr.split('.')[2],
+							: 'Failed', // stderr.split('\n');
 						actions: [
 							{
 								label: 'Auto Format',
@@ -117,9 +116,11 @@ const CHECKS: {
 					let exclusions = 1;
 					--exclusions;
 
+					const logs = stderr?.trim().split(':');
+
 					const title = isSuccess
 						? `Passed ${exclusions !== 0 ? `with ${exclusions} exclusions` : ''}`
-						: `Failed - Issues ${stderr?.trim().split(':').pop()?.trim()}`;
+						: `Failed - Issues ${logs[logs.length - 2].trim()}`;
 
 					return { isSuccess, title };
 				},

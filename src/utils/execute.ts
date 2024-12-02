@@ -1,4 +1,3 @@
-import { info } from '@actions/core';
 import { exec } from '@actions/exec';
 
 export async function execute(command: CommandType) {
@@ -17,10 +16,6 @@ export async function execute(command: CommandType) {
 			},
 		},
 	});
-
-	info(`stdout: ${stdout}`);
-	info(`stderr: ${stderr}`);
-	info(`exitCode: ${exitCode}`);
 
 	const result = command.interpret({ stdout, stderr, exitCode });
 	return { result, stdout, stderr };
