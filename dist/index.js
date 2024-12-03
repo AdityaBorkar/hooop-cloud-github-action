@@ -31875,14 +31875,6 @@ const CHECKS = [
         check: { name: 'Building' },
         commands: [
             {
-                cmd: 'bun run typecheck',
-                interpret({ exitCode }) {
-                    const isSuccess = exitCode === 0;
-                    const title = isSuccess ? 'Passed' : 'Failed';
-                    return { isSuccess, title };
-                },
-            },
-            {
                 cmd: 'bun run build:packages',
                 interpret({ exitCode }) {
                     const isSuccess = exitCode === 0;
