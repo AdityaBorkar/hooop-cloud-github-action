@@ -10,7 +10,7 @@ export async function CodeValidation() {
 
 	for await (const { check, commands } of CHECKS) {
 		summary.addHeading(check.name, '2');
-		const checkRun = await createCheckRun(check); // ! CAN CREATE ONLY ONE COMMIT STATUS / CHECK RUN PER pr
+		const checkRun = await createCheckRun(check);
 
 		const cmdCount = { success: 0, failure: 0 };
 		for (const command of commands) {
@@ -156,4 +156,33 @@ const CHECKS: {
 	// 		},
 	// 	],
 	// },
+	{
+		check: { name: 'Building' },
+		commands: [
+			{
+				cmd: 'bun run typecheck',
+				interpret({ exitCode }) {
+					const isSuccess = exitCode === 0;
+					const title = isSuccess ? 'Passed' : 'Failed';
+					return { isSuccess, title };
+				},
+			},
+			{
+				cmd: 'bun run build:packages',
+				interpret({ exitCode }) {
+					const isSuccess = exitCode === 0;
+					const title = isSuccess ? 'Passed' : 'Failed';
+					return { isSuccess, title };
+				},
+			},
+			// {
+			// 	cmd: 'bun run build:www',
+			// 	interpret({ exitCode }) {
+			// 		const isSuccess = exitCode === 0;
+			// 		const title = isSuccess ? 'Passed' : 'Failed';
+			// 		return { isSuccess, title };
+			// 	},
+			// },
+		],
+	},
 ] as const;
